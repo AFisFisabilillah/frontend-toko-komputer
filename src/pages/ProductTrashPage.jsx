@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     Table,
     Button,
@@ -7,22 +7,23 @@ import {
     message,
     Popconfirm,
     Tag,
-    Empty
+    Empty, Modal
 } from 'antd';
 import {
     ArrowLeftOutlined,
     DeleteOutlined,
-    RedoOutlined ,
+    RedoOutlined,
     EyeOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import axiosInstance from "../adapters/axiosInstance.js";
+import {useImmer} from "use-immer";
 
 const ProductTrash = () => {
     const [products, setProducts] = useState([]);
     const [loading, setLoading] = useState(false);
     const navigate = useNavigate();
-
+    const [selectedRowKey, setSelectedRowKey] = useImmer([]);
     const fetchTrashedProducts = async () => {
         try {
             setLoading(true);
@@ -58,6 +59,71 @@ const ProductTrash = () => {
             message.error('Failed to delete product');
         }
     };
+
+    const handleRestoreSelected = async () => {
+        try {
+            await axiosInstance.post('/products/restore', {
+                products: selectedRowKey
+            })
+            message.success(`Berhasil Restore ${selectedRowKey.length} Product`);
+            fetchTrashedProducts();
+            setSelectedRowKey([]);
+        } catch (e) {
+            message.error("Error restored producys");
+            console.log(e)
+        }
+    }
+
+    const forceDeleteProducts = async () => {
+        try {
+            await axiosInstance.delete('/products/force', {
+                data:{
+                    products: selectedRowKey
+                }
+            })
+            message.success(`Berhasil Force delete ${selectedRowKey.length} Product`);
+            fetchTrashedProducts();
+            setSelectedRowKey([]);
+        } catch (e) {
+            message.error("Error Force Products");
+            console.log(e)
+        }
+    }
+
+    const handleSelectedRestore = async () => {
+        Modal.confirm({
+            centered: true,
+            title: "Restore Products",
+            content: `Apakah Kamu Mau Restore ${selectedRowKey.length} Product`,
+            onOk: () => {
+                return handleRestoreSelected();
+            },
+            okText: "Restore",
+            okButtonProps: {
+                icon: <RedoOutlined/>,
+                type: "primary"
+            },
+            icon: <RedoOutlined/>,
+        })
+    }
+
+    const handleSelectedForce = () => {
+        Modal.confirm({
+            centered: true,
+            title: "Restore Products",
+            content: `Apakah Kamu Mau Delete ${selectedRowKey.length} Product`,
+            onOk: () => {
+                return forceDeleteProducts();
+            },
+            okText: "Restore",
+            okButtonProps: {
+                icon: <DeleteOutlined/>,
+                danger: true
+            },
+            icon: <DeleteOutlined/>,
+        })
+    }
+
 
     const columns = [
         {
@@ -95,7 +161,7 @@ const ProductTrash = () => {
                 <Space>
                     <Button
                         type="primary"
-                        icon={<RedoOutlined />}
+                        icon={<RedoOutlined/>}
                         onClick={() => handleRestore(record.id)}
                     >
                         Restore
@@ -107,7 +173,7 @@ const ProductTrash = () => {
                         okText="Yes"
                         cancelText="No"
                     >
-                        <Button danger icon={<DeleteOutlined />}>
+                        <Button danger icon={<DeleteOutlined/>}>
                             Delete Permanently
                         </Button>
                     </Popconfirm>
@@ -119,20 +185,38 @@ const ProductTrash = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <Card className="shadow-lg">
-                <div className="mb-6">
-                    <Space>
+                <div className="mb-2">
+                    <div>
                         <Button
                             type="text"
-                            icon={<ArrowLeftOutlined />}
+                            icon={<ArrowLeftOutlined/>}
                             onClick={() => navigate('/products')}
                         >
                             Back to Products
                         </Button>
-                        <h1 className="text-2xl font-bold text-gray-800">Trash</h1>
-                    </Space>
-                    <p className="text-gray-600">Manage deleted products</p>
+                        <div className={"ml-4"}>
+                            <h1 className="text-2xl font-bold text-gray-800">Trash</h1>
+                            <p className="text-gray-600">Manage deleted products</p>
+                        </div>
+                    </div>
                 </div>
+                <Space className={"mb-3"}>
+                    {
+                        selectedRowKey.length !== 0 && (<>
+                            <Button
+                                type="primary"
+                                icon={<RedoOutlined/>}
+                                onClick={handleSelectedRestore}
+                            >
+                                Restore
+                            </Button>
 
+                            <Button onClick={handleSelectedForce} danger icon={<DeleteOutlined/>}>
+                                Delete
+                            </Button>
+                        </>)
+                    }
+                </Space>
                 {products.length === 0 ? (
                     <Empty
                         description="No trashed products"
@@ -140,6 +224,12 @@ const ProductTrash = () => {
                     />
                 ) : (
                     <Table
+                        rowSelection={{
+                            selectedRowKeys: selectedRowKey,
+                            onChange: selectedRowKeys => {
+                                setSelectedRowKey(selectedRowKeys);
+                            }
+                        }}
                         columns={columns}
                         dataSource={products}
                         rowKey="id"
