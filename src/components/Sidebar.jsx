@@ -1,17 +1,44 @@
-import {HomeOutlined} from "@ant-design/icons";
+import {HomeOutlined, PlusOutlined, ProductOutlined, RedoOutlined, UnorderedListOutlined} from "@ant-design/icons";
 import {useState} from "react";
 import {Layout, Menu, theme} from "antd";
 
+import { Link } from "react-router-dom";
+import {useLocation} from "react-router";
+
 const menuItems = [
     {
-        key:"/",
+        key: "/",
         icon: <HomeOutlined />,
-        label:"Home",
+        label: <Link to="/">Home</Link>,
+    },
+    {
+        key: "/products",
+        icon: <ProductOutlined />,
+        label: <Link to="/products">Products</Link>,
+        children: [
+            {
+                key: "/products",
+                icon: <UnorderedListOutlined />,
+                label: <Link to="/products">Products</Link>,
+            },
+            {
+                key: "/products/create",
+                icon: <PlusOutlined />,
+                label:<Link to="/products/create">Create Products</Link>,
+            },
+            {
+                key: "/products/trashed",
+                icon:<RedoOutlined/>,
+                label:<Link to="products/trashed">Trash Products</Link>,
+            }
+        ]
     }
-]
+];
+
 
 export function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
+    const location = useLocation();
     const colorPrimary =theme.useToken().token.colorPrimary;
     return (
         <>
@@ -39,7 +66,7 @@ export function Sidebar() {
                         )}
                     </div>
                 </div>
-                <Menu defaultSelectedKeys={["/"]}  mode="inline" items={menuItems} />
+                <Menu selectedKeys={[location.pathname]} defaultSelectedKeys={["/"]}  mode="inline" items={menuItems} />
             </Layout.Sider>
         </>
     )
