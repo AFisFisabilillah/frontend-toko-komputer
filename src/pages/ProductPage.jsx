@@ -13,8 +13,9 @@ import {
     Tooltip,
     Modal,
     Pagination,
-    Image
+    Image,
 } from 'antd';
+const { confirm } = Modal;
 import {
     SearchOutlined,
     EditOutlined,
@@ -22,7 +23,7 @@ import {
     EyeOutlined,
     PlusOutlined,
     ReloadOutlined,
-    FilterOutlined
+    FilterOutlined, ExclamationCircleFilled
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from "../adapters/axiosInstance.js";
@@ -42,7 +43,7 @@ const Products = () => {
     });
     const [filtersVisible, setFiltersVisible] = useState(false);
     const navigate = useNavigate();
-
+    const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     const fetchProducts = async (params = {}) => {
         try {
             setLoading(true);
@@ -100,6 +101,52 @@ const Products = () => {
             per_page: newPagination.pageSize
         });
     };
+
+    const showDeleteConfirm = () => {
+        confirm({
+            centered: true,
+            title: "Peringatan",
+            icon: <ExclamationCircleFilled />,
+            content: 'Apakah Kamu ingin menghapus ' + selectedRowKeys.length +" data products",
+            okText: "Delete",
+            okButtonProps:{
+                icon:<DeleteOutlined />
+            },
+            okType: 'danger',
+            cancelText: 'Cancel',
+            onOk(){
+                return handleDeleteSelectProduct();
+            },
+            onCancel() {
+                console.log('Cancel');
+            },
+        });
+    };
+
+    const onSelectChange = newSelectedRowKeys => {
+        console.log('selectedRowKeys changed: ', newSelectedRowKeys);
+        setSelectedRowKeys(newSelectedRowKeys);
+    };
+    const rowSelection = {
+        selectedRowKeys,
+        onChange: onSelectChange,
+    };
+
+    const handleDeleteSelectProduct= async ()=>{
+        try {
+            await axiosInstance.delete("/products/deletes", {
+                data:{
+                    products: selectedRowKeys
+                }
+            });
+            message.success(`Berhasil Menghapus ${selectedRowKeys.length} data Products`);
+            setSelectedRowKeys([]);
+            fetchProducts();
+        }catch(error){
+            message.error(error.message);
+            console.log(error)
+        }
+    }
 
     const columns = [
         {
@@ -162,6 +209,7 @@ const Products = () => {
             dataIndex: 'created_at',
             key: 'created_at',
             width: 150,
+            sorter: (a, b) => new Date(a.created_at) - new Date(b.created_at),
             render: (date) => new Date(date).toLocaleDateString('id-ID'),
         },
         {
@@ -255,6 +303,13 @@ const Products = () => {
                         <Col>
                             <Button onClick={handleReset}>Reset</Button>
                         </Col>
+                        {selectedRowKeys.length !== 0  && <Col>
+                            <Button
+                                danger
+                                icon={<DeleteOutlined />}
+                                onClick={showDeleteConfirm}>Hapus</Button>
+                        </Col> }
+
                     </Row>
 
                     {filtersVisible && (
@@ -266,6 +321,9 @@ const Products = () => {
                                         value={minPrice}
                                         onChange={(e) => setMinPrice(e.target.value)}
                                         prefix="Rp"
+                                        formatter={(value) =>
+                                            value ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
+                                        }
                                         type="number"
                                     />
                                 </Col>
@@ -275,6 +333,9 @@ const Products = () => {
                                         value={maxPrice}
                                         onChange={(e) => setMaxPrice(e.target.value)}
                                         prefix="Rp"
+                                        formatter={(value) =>
+                                            value ? value.toString().replace(/\B(?=(\d{3})+(?!\d))/g, '.') : ''
+                                        }
                                         type="number"
                                     />
                                 </Col>
@@ -290,6 +351,7 @@ const Products = () => {
 
                 {/* Products Table */}
                 <Table
+                    rowSelection={rowSelection}
                     columns={columns}
                     dataSource={products}
                     rowKey="id"
