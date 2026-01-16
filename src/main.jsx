@@ -14,6 +14,11 @@ import CreateProduct from "./pages/CreateProductPage.jsx";
 import ProductDetail from "./pages/ProductDetailPage.jsx";
 import EditProduct from "./pages/EditProductPage.jsx";
 import ProductTrash from "./pages/ProductTrashPage.jsx";
+import ServicesTrash from "./pages/ServicesTrash.jsx";
+import Services from "./pages/ServicesPage.jsx";
+import CreateService from "./pages/CreateServicesPage.jsx";
+import ServiceDetail from "./pages/ServicesDetail.jsx";
+import EditService from "./pages/EditServicesPage.jsx";
 
 const store = configureStore({
     reducer: {
@@ -36,6 +41,12 @@ createRoot(document.getElementById('root')).render(
                         <Route path="/products/:id" element={<ProductDetail />} />
                         <Route path="/products/:id/edit" element={<EditProduct />} />
                         <Route path="/products/trashed" element={<ProductTrash />} />
+
+                        <Route path="/services" element={<Services />} />
+                        <Route path="/services/create" element={<CreateService />} />
+                        <Route path="/services/:id" element={<ServiceDetail />} />
+                        <Route path="/services/:id/edit" element={<EditService />} />
+                        <Route path="/services/trashed" element={<ServicesTrash />} />
                     </Route>
                     <Route path="/login" element={<LoginPage/>}/>
                 </Routes>
