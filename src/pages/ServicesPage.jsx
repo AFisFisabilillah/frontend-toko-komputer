@@ -28,7 +28,7 @@ import {
     FilterOutlined,
     ReloadOutlined,
     MoreOutlined,
-    HistoryOutlined
+    HistoryOutlined, ExclamationCircleFilled
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
@@ -52,6 +52,7 @@ const Services = () => {
     const [filtersVisible, setFiltersVisible] = useState(false);
     const [exportLoading, setExportLoading] = useState(false);
     const navigate = useNavigate();
+    const [selectedRowKey , setSelectedRowKey] = useState([]);
 
     const statusColors = {
         received: 'blue',
@@ -162,6 +163,41 @@ const Services = () => {
         }
     };
 
+    async function handleDeleteSelected() {
+        try {
+            await axiosInstance.delete("/services/deletes", {
+                data:{
+                    services: selectedRowKey
+                }
+            });
+            message.success(`Berhasil Menghapus ${selectedRowKey.length} data Products`);
+            setSelectedRowKey([]);
+            fetchServices();
+        }catch(error){
+            message.error(error.message);
+            console.log(error)
+        }
+    }
+    function showDeleteConfirmation() {
+        Modal.confirm({
+            centered: true,
+            title: "Peringatan",
+            icon: <ExclamationCircleFilled />,
+            content: 'Apakah Kamu ingin menghapus ' + selectedRowKey.length +" data products",
+            okText: "Delete",
+            okButtonProps:{
+                icon:<DeleteOutlined />
+            },
+            okType: 'danger',
+            cancelText: 'Cancel',
+            onOk(){
+                return handleDeleteSelected();
+            },
+            onCancel() {
+                console.log('Cancel');
+            },
+        });
+    }
     const columns = [
         {
             title: 'Service Code',
@@ -383,6 +419,14 @@ const Services = () => {
                                 Reset
                             </Button>
                         </Col>
+
+                        {selectedRowKey.length !== 0 &&
+                            <Col>
+                            <Button danger onClick={showDeleteConfirmation} icon={<DeleteOutlined />}>
+                                Hapus
+                            </Button>
+                        </Col>}
+
                     </Row>
 
                     {filtersVisible && (
@@ -420,6 +464,12 @@ const Services = () => {
 
                 {/* Services Table */}
                 <Table
+                    rowSelection={{
+                        selectedRowKeys:selectedRowKey,
+                        onChange:selectedRowKeys => {
+                            setSelectedRowKey(selectedRowKeys);
+                        }
+                    }}
                     columns={columns}
                     dataSource={services}
                     rowKey="id"

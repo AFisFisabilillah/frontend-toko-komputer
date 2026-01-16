@@ -34,6 +34,12 @@ import axiosInstance from '../adapters/axiosInstance';
 const { TextArea } = Input;
 const { Option } = Select;
 const { Title } = Typography;
+const normFile = (e) => {
+    if (Array.isArray(e)) {
+        return e;
+    }
+    return e?.fileList;
+};
 
 const EditService = () => {
     const [form] = Form.useForm();
@@ -174,9 +180,9 @@ const EditService = () => {
             });
 
             // Append new images
-            fileList.forEach(file => {
+            values['images'].forEach((file,  index) => {
                 if (file.originFileObj) {
-                    formData.append('images[]', file.originFileObj);
+                    formData.append(`images[${index}]`, file.originFileObj);
                 }
             });
 
@@ -214,7 +220,7 @@ const EditService = () => {
                 message.error('Image must be smaller than 2MB!');
                 return false;
             }
-
+            console.log(file);
             setFileList([...fileList, file]);
             return false;
         },
@@ -546,14 +552,21 @@ const EditService = () => {
 
                                 <Card title="Add New Images" className="shadow-sm">
                                     <div className="space-y-4">
-                                        <Upload {...uploadProps}>
-                                            {fileList.length >= 5 ? null : (
-                                                <div>
-                                                    <UploadOutlined />
-                                                    <div style={{ marginTop: 8 }}>Upload</div>
-                                                </div>
-                                            )}
-                                        </Upload>
+                                        <Form.Item
+                                            name="images"
+                                            valuePropName="fileList"
+                                            getValueFromEvent={normFile}
+
+                                        >
+                                            <Upload {...uploadProps}>
+                                                {fileList.length >= 5 ? null : (
+                                                    <div>
+                                                        <PlusOutlined />
+                                                        <div style={{ marginTop: 8 }}>Upload</div>
+                                                    </div>
+                                                )}
+                                            </Upload>
+                                        </Form.Item>
                                         <div className="text-sm text-gray-500">
                                             <p>• Upload up to 5 images</p>
                                             <p>• New images will be replace all image</p>

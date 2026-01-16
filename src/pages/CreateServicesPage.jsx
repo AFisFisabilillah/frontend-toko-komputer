@@ -48,6 +48,7 @@ const CreateService = () => {
     const [searchModalVisible, setSearchModalVisible] = useState(false);
     const [productSearch, setProductSearch] = useState('');
     const [productLoading, setProductLoading] = useState(false);
+    const [serviceCost, setServiceCost] = useState(0);
     const [allProducts, setAllProducts] = useState([]);
     const navigate = useNavigate();
 
@@ -112,7 +113,6 @@ const CreateService = () => {
     };
 
     const calculateTotal = () => {
-        const serviceCost = form.getFieldValue('service_cost') || 0;
         const productsTotal = selectedProducts.reduce((total, product) => {
             return total + (product.price * product.qty);
         }, 0);
@@ -180,7 +180,7 @@ const CreateService = () => {
                 message.error('Image must be smaller than 2MB!');
                 return false;
             }
-
+            console.log(file);
             setFileList([...fileList, file]);
             return false;
         },
@@ -437,12 +437,15 @@ const CreateService = () => {
                                     <Form.Item
                                         label="Service Cost"
                                         name="service_cost"
-                                        rules={[{ required: true, message: 'Please enter service cost' }]}
+                                        rules={[{ required: false, message: 'Please enter service cost' }]}
                                     >
                                         <InputNumber
                                             placeholder="0"
                                             size="large"
                                             min={0}
+                                            onChange={(value) => {
+                                                setServiceCost(value);
+                                            }}
                                             formatter={value => `Rp ${value}`.replace(/\B(?=(\d{3})+(?!\d))/g, ',')}
                                             parser={value => value.replace(/Rp\s?|(,*)/g, '')}
                                             className="w-full"
@@ -491,7 +494,7 @@ const CreateService = () => {
 
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Service Cost</span>
-                                            <span>Rp {(form.getFieldValue('service_cost') || 0).toLocaleString('id-ID')}</span>
+                                            <span>Rp {serviceCost.toLocaleString('id-ID')}</span>
                                         </div>
 
                                         <Divider className="my-2" />

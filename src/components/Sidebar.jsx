@@ -1,4 +1,11 @@
-import {HomeOutlined, PlusOutlined, ProductOutlined, RedoOutlined, UnorderedListOutlined} from "@ant-design/icons";
+import {
+    HomeOutlined,
+    PlusOutlined,
+    ProductOutlined,
+    RedoOutlined,
+    ToolOutlined,
+    UnorderedListOutlined
+} from "@ant-design/icons";
 import {useState} from "react";
 import {Layout, Menu, theme} from "antd";
 
@@ -14,7 +21,7 @@ const menuItems = [
     {
         key: "/products",
         icon: <ProductOutlined />,
-        label: <Link to="/products">Products</Link>,
+        label:"Products",
         children: [
             {
                 key: "/products",
@@ -29,7 +36,29 @@ const menuItems = [
             {
                 key: "/products/trashed",
                 icon:<RedoOutlined/>,
-                label:<Link to="products/trashed">Trash Products</Link>,
+                label:<Link to="/products/trashed">Trash Products</Link>,
+            }
+        ]
+    },
+    {
+        key: "/services",
+        icon:<ToolOutlined />,
+        label:"Services",
+        children: [
+            {
+                key: "/services",
+                icon: <UnorderedListOutlined />,
+                label: <Link to="/services">Services</Link>,
+            },
+            {
+                key: "/services/create",
+                icon: <PlusOutlined />,
+                label:<Link to="/services/create">Create Services</Link>,
+            },
+            {
+                key: "/services/trashed",
+                icon:<RedoOutlined/>,
+                label:<Link to="/services/trashed">Trash Services</Link>,
             }
         ]
     }
