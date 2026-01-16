@@ -533,13 +533,6 @@ const EditService = () => {
                                                             mask: <EyeOutlined />,
                                                         }}
                                                     />
-                                                    <Button
-                                                        type="text"
-                                                        danger
-                                                        icon={<DeleteOutlined />}
-                                                        className="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity"
-                                                        onClick={() => handleRemoveExistingImage(image)}
-                                                    />
                                                 </div>
                                             ))}
                                         </div>
@@ -563,7 +556,7 @@ const EditService = () => {
                                         </Upload>
                                         <div className="text-sm text-gray-500">
                                             <p>• Upload up to 5 images</p>
-                                            <p>• New images will be added to existing ones</p>
+                                            <p>• New images will be replace all image</p>
                                             <p>• Supported: JPG, JPEG, PNG</p>
                                         </div>
                                     </div>
