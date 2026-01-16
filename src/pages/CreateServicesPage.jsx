@@ -139,9 +139,10 @@ const CreateService = () => {
             });
 
             // Append images
-            fileList.forEach(file => {
+            values["images"].forEach((file,index) => {
+                console.log("file",file.originFileObj);
                 if (file.originFileObj) {
-                    formData.append('images[]', file.originFileObj);
+                    formData.append(`images[${index}]`, file.originFileObj);
                 }
             });
 
