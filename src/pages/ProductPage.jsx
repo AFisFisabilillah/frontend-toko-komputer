@@ -23,10 +23,11 @@ import {
     EyeOutlined,
     PlusOutlined,
     ReloadOutlined,
-    FilterOutlined, ExclamationCircleFilled
+    FilterOutlined, ExclamationCircleFilled, DownloadOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from "../adapters/axiosInstance.js";
+import dayjs from "dayjs";
 
 const { Search } = Input;
 
@@ -41,6 +42,7 @@ const Products = () => {
         pageSize: 10,
         total: 0
     });
+    const [exportLoading, setExportLoading] = useState(false);
     const [filtersVisible, setFiltersVisible] = useState(false);
     const navigate = useNavigate();
     const [selectedRowKeys, setSelectedRowKeys] = useState([]);
@@ -121,6 +123,29 @@ const Products = () => {
                 console.log('Cancel');
             },
         });
+    };
+
+    const handleExport = async () => {
+        try {
+            setExportLoading(true);
+            const response = await axiosInstance.get('/products/export', {
+                responseType: 'blob'
+            });
+
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `Products_${dayjs().format('YYYY-MM-DD_HH-mm')}.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+
+            message.success('Export successful');
+        } catch (error) {
+            message.error('Failed to export services');
+        } finally {
+            setExportLoading(false);
+        }
     };
 
     const onSelectChange = newSelectedRowKeys => {
@@ -259,6 +284,13 @@ const Products = () => {
                         </Col>
                         <Col>
                             <Space>
+                                <Button
+                                    icon={<DownloadOutlined />}
+                                    loading={exportLoading}
+                                    onClick={handleExport}
+                                >
+                                    Export
+                                </Button>
                                 <Button
                                     type="primary"
                                     icon={<PlusOutlined />}
