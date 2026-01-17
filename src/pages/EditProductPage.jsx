@@ -20,13 +20,19 @@ import {
     ArrowLeftOutlined,
     SaveOutlined,
     DeleteOutlined,
-    EyeOutlined
+    EyeOutlined, PlusOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from "../adapters/axiosInstance.js";
 
 const { TextArea } = Input;
 const { Title } = Typography;
+const normFile = (e) => {
+    if (Array.isArray(e)) {
+        return e;
+    }
+    return e?.fileList;
+};
 
 const EditProduct = () => {
     const [form] = Form.useForm();
@@ -77,9 +83,9 @@ const EditProduct = () => {
             });
 
             // Append new images
-            fileList.forEach(file => {
+            values['images']?.forEach((file,index) => {
                 if (file.originFileObj) {
-                    formData.append('images[]', file.originFileObj);
+                    formData.append(`images[${index}]`, file.originFileObj);
                 }
             });
 
@@ -167,22 +173,6 @@ const EditProduct = () => {
                             <Col xs={24} lg={16}>
                                 <div className="space-y-6">
                                     <Row gutter={16}>
-                                        <Col xs={24} md={12}>
-                                            <Form.Item
-                                                label="SKU"
-                                                name="sku"
-                                                rules={[
-                                                    { required: true, message: 'Please enter SKU' },
-                                                    { pattern: /^[A-Z0-9-]+$/, message: 'Only uppercase letters, numbers and dashes' }
-                                                ]}
-                                            >
-                                                <Input
-                                                    placeholder="e.g., SKU-1001"
-                                                    size="large"
-                                                    className="w-full"
-                                                />
-                                            </Form.Item>
-                                        </Col>
                                         <Col xs={24} md={12}>
                                             <Form.Item
                                                 label="Product Name"
@@ -284,14 +274,21 @@ const EditProduct = () => {
 
                                     <Card title="Add New Images">
                                         <div className="space-y-4">
-                                            <Upload {...uploadProps}>
-                                                {fileList.length >= 8 ? null : (
-                                                    <div>
-                                                        <UploadOutlined />
-                                                        <div style={{ marginTop: 8 }}>Upload</div>
-                                                    </div>
-                                                )}
-                                            </Upload>
+                                            <Form.Item
+                                                name="images"
+                                                valuePropName="fileList"
+                                                getValueFromEvent={normFile}
+
+                                            >
+                                                <Upload {...uploadProps}>
+                                                    {fileList.length >= 5 ? null : (
+                                                        <div>
+                                                            <PlusOutlined />
+                                                            <div style={{ marginTop: 8 }}>Upload</div>
+                                                        </div>
+                                                    )}
+                                                </Upload>
+                                            </Form.Item>
                                             <div className="text-sm text-gray-500">
                                                 <p>• Upload up to 8 images</p>
                                                 <p>• New images will replace existing ones</p>

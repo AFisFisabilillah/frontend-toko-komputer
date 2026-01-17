@@ -49,7 +49,7 @@ const CreateProduct = () => {
                 }
             });
 
-            values["images"].forEach((file,index) => {
+            values["images"]?.forEach((file,index) => {
                 console.log("file",file.originFileObj);
                 if (file.originFileObj) {
                     formData.append(`images[${index}]`, file.originFileObj);
@@ -131,22 +131,6 @@ const CreateProduct = () => {
                             <Col xs={24} lg={16}>
                                 <div className="space-y-6">
                                     <Row gutter={16}>
-                                        <Col xs={24} md={12}>
-                                            <Form.Item
-                                                label="SKU"
-                                                name="sku"
-                                                rules={[
-                                                    { required: true, message: 'Please enter SKU' },
-                                                    { pattern: /^[A-Z0-9-]+$/, message: 'Only uppercase letters, numbers and dashes' }
-                                                ]}
-                                            >
-                                                <Input
-                                                    placeholder="e.g., SKU-1001"
-                                                    size="large"
-                                                    className="w-full"
-                                                />
-                                            </Form.Item>
-                                        </Col>
                                         <Col xs={24} md={12}>
                                             <Form.Item
                                                 label="Product Name"

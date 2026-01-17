@@ -41,7 +41,7 @@ const ImportProduct = () => {
     const [previewModalVisible, setPreviewModalVisible] = useState(false);
     const navigate = useNavigate();
 
-    const requiredFields = ['sku', 'name', 'brand', 'price', 'stok'];
+    const requiredFields = [ 'name', 'brand', 'price', 'stok'];
 
     const validateData = (data) => {
         const errors = [];
@@ -206,15 +206,6 @@ const ImportProduct = () => {
 
     const columns = [
         {
-            title: 'SKU',
-            dataIndex: 'sku',
-            key: 'sku',
-            width: 120,
-            render: (sku) => (
-                <span className="font-mono font-medium">{sku}</span>
-            ),
-        },
-        {
             title: 'Product Name',
             dataIndex: 'name',
             key: 'name',
@@ -336,7 +327,7 @@ const ImportProduct = () => {
                                         <ul className="list-disc pl-4 space-y-1">
                                             <li>Maximum file size: 5MB</li>
                                             <li>Supported formats: .xlsx, .xls, .csv</li>
-                                            <li>Required columns: sku, name, brand, price, stok</li>
+                                            <li>Required columns: name, brand, price, stok</li>
                                             <li>Optional column: description</li>
                                         </ul>
                                     }
