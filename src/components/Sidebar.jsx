@@ -2,9 +2,9 @@ import {
     HomeOutlined, ImportOutlined,
     PlusOutlined,
     ProductOutlined,
-    RedoOutlined,
+    RedoOutlined, TeamOutlined,
     ToolOutlined,
-    UnorderedListOutlined
+    UnorderedListOutlined, UserOutlined
 } from "@ant-design/icons";
 import {useState} from "react";
 import {Layout, Menu, theme} from "antd";
@@ -69,7 +69,17 @@ const menuItems = [
                 label:<Link to="/services/import">Import Services</Link>,
             }
         ]
-    }
+    },
+    {
+        key: '/admins',
+        icon: <TeamOutlined />,
+        label: <Link to="/admins">Admins</Link>,
+    },
+    {
+        key: '/profile',
+        icon: <UserOutlined />,
+        label: <Link to="/profile">My Profile</Link>,
+    },
 ];
 
 
