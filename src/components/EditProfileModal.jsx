@@ -25,17 +25,11 @@ import axiosInstance from '../adapters/axiosInstance';
 
 const { Text } = Typography;
 
-const normFile = (e) => {
-    if (Array.isArray(e)) {
-        return e;
-    }
-    return e?.fileList;
-};
+
 
 const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [fileList, setFileList] = useState([]);
     const [previewImage, setPreviewImage] = useState(profile?.profile || null);
 
     React.useEffect(() => {
@@ -53,29 +47,32 @@ const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
             setLoading(true);
 
             const formData = new FormData();
+
             Object.keys(values).forEach(key => {
-                if (values[key] !== undefined && values[key] !== null) {
+                if (key !== 'profile') {
                     formData.append(key, values[key]);
                 }
             });
 
-            // Append profile image if changed
-            if (fileList.length > 0 && fileList[0].originFileObj) {
-                formData.append('profile', fileList[0].originFileObj);
+            if (values.profile ) {
+                formData.append(
+                    "profile",
+                    values.profile.file
+                );
             }
 
-            const response = await axiosInstance.post('/profile', formData, {
+            await axiosInstance.post('/profile/update', formData, {
                 headers: {
                     'Content-Type': 'multipart/form-data',
                 },
             });
 
-            message.success('Profile updated successfully!');
             form.resetFields();
-            setFileList([]);
+            setPreviewImage(null);
             onSuccess();
         } catch (error) {
-            message.error(error.response?.data?.message || 'Failed to update profile');
+            console.log(error);
+            message.error(error.response?.data?.message || 'Failed to create admin');
         } finally {
             setLoading(false);
         }
@@ -95,7 +92,6 @@ const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
                 return false;
             }
 
-            setFileList([file]);
 
             // Create preview
             const reader = new FileReader();
@@ -107,10 +103,8 @@ const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
             return false;
         },
         onRemove: () => {
-            setFileList([]);
             setPreviewImage(profile?.profile || null);
         },
-        fileList,
         maxCount: 1,
         accept: 'image/*',
         listType: "picture-card",
@@ -119,7 +113,6 @@ const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
 
     const handleCancel = () => {
         form.resetFields();
-        setFileList([]);
         setPreviewImage(profile?.profile || null);
         onCancel();
     };
@@ -167,8 +160,6 @@ const EditProfileModal = ({ visible, profile, onCancel, onSuccess }) => {
 
                             <Form.Item
                                 name="profile"
-                                valuePropName="fileList"
-                                getValueFromEvent={normFile}
                             >
                                 <Upload {...uploadProps}>
                                     <Button icon={<UploadOutlined />}>

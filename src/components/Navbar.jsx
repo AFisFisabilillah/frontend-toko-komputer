@@ -1,10 +1,20 @@
 import {Avatar, Dropdown, Flex, Layout} from "antd";
 import {useSelector} from "react-redux";
 import {LogoutOutlined, UserOutlined} from "@ant-design/icons";
+import {useNavigate} from "react-router";
 
 export function Navbar() {
+    const navigate = useNavigate();
     const userMenuItems = [
-
+        {
+            key:"profile",
+            icon: <UserOutlined />,
+            label: 'Profile',
+            onClick: () => {navigate('/profile')}
+        },
+        {
+            type:"divider",
+        },
         {
             key: 'logout',
             icon: <LogoutOutlined/>,
@@ -12,15 +22,6 @@ export function Navbar() {
             danger: true,
             onClick: () => {
             },
-        },
-        {
-            type:"divider",
-        },
-        {
-            key:"profile",
-            icon: <UserOutlined />,
-            label: 'Profile',
-            onClick: () => {}
         }
     ];
     const user = useSelector((state) => state.auth.user);

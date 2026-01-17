@@ -1,0 +1,64 @@
+{
+  "dashboard": {
+    "overview": {
+      "totalProducts": 156,
+      "totalServices": 89,
+      "totalAdmins": 8,
+      "totalRevenue": 48500000
+    },
+    "recentActivities": [
+      {
+        "id": 1,
+        "type": "service",
+        "title": "New Service Request",
+        "description": "Laptop repair from John Doe",
+        "status": "received",
+        "time": "2 hours ago"
+      },
+      {
+        "id": 4,
+        "type": "service",
+        "title": "Service Completed",
+        "description": "Laptop screen replacement",
+        "status": "done",
+        "time": "2 days ago"
+      }
+    ],
+    "serviceStats": {
+      "total": 89,
+      "byStatus": {
+        "received": 15,
+        "process": 8,
+        "done": 40,
+        "taken": 24,
+        "cancelled": 2
+      }
+    },
+    "productStats": {
+      "total": 156,
+      "lowStock": 8,
+      "outOfStock": 3,
+      "topSelling": [
+        { "name": "SSD NVMe 1TB", "sold": 45 },
+        { "name": "RAM 8GB DDR4", "sold": 38 },
+        { "name": "Laptop Charger", "sold": 32 },
+        { "name": "Keyboard Cover", "sold": 28 },
+        { "name": "Mouse Wireless", "sold": 25 }
+      ]
+    },
+    "revenueData": {
+      "monthly": [
+        { "month": "Jan", "revenue": 3200000 },
+        { "month": "Feb", "revenue": 4200000 },
+        { "month": "Mar", "revenue": 3800000 },
+        { "month": "Apr", "revenue": 4500000 },
+        { "month": "May", "revenue": 5200000 },
+        { "month": "Jun", "revenue": 6100000 }
+      ],
+      "categories": [
+        { "category": "Service", "value": 65 },
+        { "category": "Products", "value": 35 }
+      ]
+    }
+  }
+}
