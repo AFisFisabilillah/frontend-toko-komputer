@@ -28,7 +28,7 @@ import {
     FilterOutlined,
     ReloadOutlined,
     MoreOutlined,
-    HistoryOutlined, ExclamationCircleFilled
+    HistoryOutlined, ExclamationCircleFilled, ImportOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
@@ -337,6 +337,12 @@ const Services = () => {
                                     onClick={handleExport}
                                 >
                                     Export
+                                </Button>
+                                <Button
+                                    icon={<ImportOutlined />}
+                                    onClick={() => navigate('/services/import')}
+                                >
+                                    Import
                                 </Button>
                                 <Button
                                     icon={<HistoryOutlined />}

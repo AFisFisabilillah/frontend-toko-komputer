@@ -67,6 +67,7 @@ const CreateService = () => {
             const response = await axiosInstance.get(`/products?${queryParams}`);
             setAllProducts(response.data.data);
         } catch (error) {
+            console.log(error)
             message.error('Failed to fetch products');
         } finally {
             setProductLoading(false);
@@ -139,7 +140,7 @@ const CreateService = () => {
             });
 
             // Append images
-            values["images"].forEach((file,index) => {
+            values["images"]?.forEach((file,index) => {
                 console.log("file",file.originFileObj);
                 if (file.originFileObj) {
                     formData.append(`images[${index}]`, file.originFileObj);
@@ -155,6 +156,7 @@ const CreateService = () => {
             message.success('Service created successfully!');
             navigate('/services');
         } catch (error) {
+            console.log(error)
             message.error(error.response?.data?.message || 'Failed to create service');
         } finally {
             setLoading(false);
@@ -494,7 +496,7 @@ const CreateService = () => {
 
                                         <div className="flex justify-between text-sm">
                                             <span className="text-gray-600">Service Cost</span>
-                                            <span>Rp {serviceCost.toLocaleString('id-ID')}</span>
+                                            <span>Rp {serviceCost?.toLocaleString('id-ID')}</span>
                                         </div>
 
                                         <Divider className="my-2" />

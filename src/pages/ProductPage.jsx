@@ -23,7 +23,7 @@ import {
     EyeOutlined,
     PlusOutlined,
     ReloadOutlined,
-    FilterOutlined, ExclamationCircleFilled, DownloadOutlined
+    FilterOutlined, ExclamationCircleFilled, DownloadOutlined, ImportOutlined
 } from '@ant-design/icons';
 import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from "../adapters/axiosInstance.js";
@@ -290,6 +290,12 @@ const Products = () => {
                                     onClick={handleExport}
                                 >
                                     Export
+                                </Button>
+                                <Button
+                                    icon={<ImportOutlined />}
+                                    onClick={() => navigate('/products/import')}
+                                >
+                                    Import
                                 </Button>
                                 <Button
                                     type="primary"
