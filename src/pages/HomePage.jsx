@@ -156,8 +156,7 @@ const HomePage = () => {
             value: stats.overview.totalProducts,
             icon: <ShoppingOutlined />,
             color: '#1890ff',
-            change: '+12%', // Ini bisa dihitung dari data historis jika ada
-            trend: 'up',
+
             path: '/products'
         },
         {
@@ -165,8 +164,6 @@ const HomePage = () => {
             value: stats.overview.totalServices,
             icon: <LaptopOutlined />,
             color: '#52c41a',
-            change: '+8%',
-            trend: 'up',
             path: '/services'
         },
         {
@@ -174,8 +171,7 @@ const HomePage = () => {
             value: stats.overview.totalAdmins,
             icon: <TeamOutlined />,
             color: '#722ed1',
-            change: '+2',
-            trend: 'up',
+
             path: '/admins'
         },
         {
