@@ -31,6 +31,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import * as XLSX from 'xlsx';
+import ServiceTemplate from "../components/ServiceTemplate.jsx";
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -418,6 +419,7 @@ const ImportService = () => {
                                                 <li>service_code (Will generate otomatis0</li>
                                                 <li>status (received, process, done, taken, cancelled)</li>
                                             </ul>
+                                            <ServiceTemplate/>
                                         </div>
                                     }
                                     type="info"

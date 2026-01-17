@@ -28,6 +28,8 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import * as XLSX from 'xlsx';
+import CreateProduct from "./CreateProductPage.jsx";
+import ProductTemplate from "../components/ProductTemplate.jsx";
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -335,6 +337,7 @@ const ImportProduct = () => {
                                     showIcon
                                 />
                             </div>
+                            <ProductTemplate/>
                         </div>
                     )}
 

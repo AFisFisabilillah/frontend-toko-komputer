@@ -1,5 +1,5 @@
 import {
-    HomeOutlined,
+    HomeOutlined, ImportOutlined,
     PlusOutlined,
     ProductOutlined,
     RedoOutlined,
@@ -37,6 +37,10 @@ const menuItems = [
                 key: "/products/trashed",
                 icon:<RedoOutlined/>,
                 label:<Link to="/products/trashed">Trash Products</Link>,
+            },{
+                key: "/products/import",
+                icon:<ImportOutlined/>,
+                label:<Link to="/products/import">Import Products</Link>,
             }
         ]
     },
@@ -59,6 +63,10 @@ const menuItems = [
                 key: "/services/trashed",
                 icon:<RedoOutlined/>,
                 label:<Link to="/services/trashed">Trash Services</Link>,
+            },{
+                key: "/services/import",
+                icon:<ImportOutlined/>,
+                label:<Link to="/services/import">Import Services</Link>,
             }
         ]
     }
