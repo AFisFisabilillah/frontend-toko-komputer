@@ -4,6 +4,7 @@ import {LogoutOutlined, UserOutlined} from "@ant-design/icons";
 import {useNavigate} from "react-router";
 import {logoutUser} from "../features/auth/authSlice.js";
 import {useEffect} from "react";
+import {Colors} from "../constants/Colors.js";
 
 export function Navbar() {
     const dispatch = useDispatch();
@@ -59,7 +60,9 @@ export function Navbar() {
                     <div className="flex items-center space-x-2">
                         <h1 className="text-base sm:text-xl font-bold text-gray-800 truncate">
                             Selamat datang,{" "}
-                            <span className="text-emerald-300">
+                            <span style={{
+                                color:Colors.primary
+                            }} className="">
                 {window.innerWidth < 640 ? user.username : user.username}</span>
                             ! 👋
                         </h1>

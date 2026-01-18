@@ -26,7 +26,7 @@ import {
     LaptopOutlined,
     DollarOutlined,
     HistoryOutlined,
-    CustomerServiceOutlined
+    CustomerServiceOutlined, WhatsAppOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
@@ -405,6 +405,27 @@ const ServiceDetail = () => {
                                         className="w-full"
                                     >
                                         Edit Service
+                                    </Button>
+                                    <Button
+                                        color={"green"}
+                                        variant="solid"
+                                        icon={<WhatsAppOutlined />}
+                                        size="large"
+                                        onClick={() => {
+                                            const nomorAsli = service.customer_phone; // Contoh nomor dari database
+
+                                            let formattedNumber = nomorAsli.replace(/\D/g, '');
+
+                                            // 2. Cek jika diawali '0', ubah jadi '62'
+                                            if (formattedNumber.startsWith('0')) {
+                                                formattedNumber = '62' + formattedNumber.slice(1);
+                                            }
+
+                                            window.open(`https://wa.me/${formattedNumber}`, '_blank');
+                                        }}
+                                        className="w-full bg-[#25D366] hover:bg-[#128C7E] border-none text-white"
+                                    >
+                                        Chat Customer
                                     </Button>
                                     <Button
                                         icon={<PrinterOutlined />}

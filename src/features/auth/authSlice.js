@@ -10,7 +10,6 @@ export const loginUser = createAsyncThunk(
             });
             localStorage.setItem("token", res.data.token);
             axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
-            console.log("login-berhasil")
             return res.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(error.response.data);
@@ -24,7 +23,6 @@ export const logoutUser = createAsyncThunk(
     async (_, thunkAPI) => {
         try {
             const response  = await axiosInstance.delete("/logout");
-            console.log("logout berhasil ", response.data)
         } catch (error) {
         } finally {
             localStorage.removeItem("token");
@@ -61,6 +59,7 @@ export const auth = createSlice({
         builder
             .addCase(loginUser.pending,state => {
             state.isLoading = true;
+            state.error=null;
             })
             .addCase(loginUser.fulfilled, (state, action) => {
                 state.isLoading = false;

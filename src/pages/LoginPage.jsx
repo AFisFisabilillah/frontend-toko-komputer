@@ -1,5 +1,5 @@
-import {Button, Form, Input, Card, Typography, message, Spin} from "antd";
-import { LockOutlined, UserOutlined } from "@ant-design/icons";
+import {Button, Form, Input, Card, Typography, message, Spin, Alert, notification} from "antd";
+import {LockOutlined, NotificationOutlined, UserOutlined} from "@ant-design/icons";
 import {useDispatch, useSelector} from "react-redux";
 import {loginUser} from "../features/auth/authSlice.js";
 import {useEffect} from "react";
@@ -10,12 +10,15 @@ const { Title, Text } = Typography;
 export default function LoginPage() {
     const [form] = Form.useForm();
     const dispatch = useDispatch();
-    const {loading,isAuthenticated} = useSelector(state => state.auth);
+    const {loading,isAuthenticated, error} = useSelector(state => state.auth);
     const navigate = useNavigate();
 
     async function handleFinish(values) {
-        console.log(values);
-        dispatch(loginUser(values));
+        console.log("values", values);
+        dispatch(loginUser({
+            username: values.username,
+            password: values.password,
+        }));
     }
 
     useEffect(()=>{
@@ -23,7 +26,16 @@ export default function LoginPage() {
             message.success("login berhasil")
             navigate('/')
         }
-    },[isAuthenticated])
+
+        if(error){
+            console.log(error)
+            notification.error({
+                title:"Login failed",
+                description:error,
+                duration:4,
+            })
+        }
+    },[isAuthenticated, error])
 
     function handleFinishFailed(errorInfo) {
         console.log('Failed:', errorInfo);
@@ -31,7 +43,7 @@ export default function LoginPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex flex-col justify-center items-center p-4">
+        <div className="min-h-screen bg-linear-to-br from-rose-50 to-red-100 flex flex-col justify-center items-center p-4">
             {/* Header */}
             <div className="text-center mb-8">
                 <h1 className="text-4xl font-bold text-gray-800 mb-2">Selamat Datang</h1>
@@ -135,6 +147,9 @@ export default function LoginPage() {
                     <Spin size="large" tip="Sedang memproses login..." />
                 </div>
             )}
+
+
+
         </div>
     );
 }
