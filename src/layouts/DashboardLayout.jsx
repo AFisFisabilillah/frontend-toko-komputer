@@ -44,7 +44,7 @@ export function DashboardLayout() {
                         </div>
                     </Content>
                     <Footer style={{ textAlign: 'center' }}>
-                        Ant Design ©{new Date().getFullYear()} Created by Ant UED
+                        AhTauFix ©{new Date().getFullYear()} Created by Afis Fisabilillah
                     </Footer>
                 </Layout>
             </Layout>
