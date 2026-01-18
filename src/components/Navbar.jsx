@@ -1,27 +1,39 @@
 import {Avatar, Dropdown, Flex, Layout} from "antd";
-import {useSelector} from "react-redux";
+import {useDispatch, useSelector} from "react-redux";
 import {LogoutOutlined, UserOutlined} from "@ant-design/icons";
 import {useNavigate} from "react-router";
+import {logoutUser} from "../features/auth/authSlice.js";
+import {useEffect} from "react";
 
 export function Navbar() {
+    const dispatch = useDispatch();
+    const  {isAuthenticated}= useSelector(state => state.auth);
     const navigate = useNavigate();
+    useEffect(() => {
+        if(!isAuthenticated){
+            navigate("/login");
+        }
+    },[isAuthenticated])
     const userMenuItems = [
         {
-            key:"profile",
-            icon: <UserOutlined />,
+            key: "profile",
+            icon: <UserOutlined/>,
             label: 'Profile',
-            onClick: () => {navigate('/profile')}
+            onClick: () => {
+                navigate('/profile')
+            }
         },
         {
-            type:"divider",
+            type: "divider",
         },
         {
             key: 'logout',
             icon: <LogoutOutlined/>,
             label: 'Keluar',
             danger: true,
-            onClick: () => {
-            },
+            onClick: async () => {
+                dispatch(logoutUser());
+            }
         }
     ];
     const user = useSelector((state) => state.auth.user);

@@ -4,6 +4,7 @@ import {Sidebar} from "../components/Sidebar.jsx";
 import {Outlet} from "react-router";
 import {useState} from "react";
 import {HomeOutlined} from "@ant-design/icons";
+import {Colors} from "../constants/Colors.js";
 const {Header,Sider  ,Content, Footer } = Layout;
 
 const items = [
@@ -22,7 +23,7 @@ export function DashboardLayout() {
         <ConfigProvider
         theme={{
             "token": {
-                "colorPrimary": "#3ce6a2",
+                "colorPrimary":Colors.primary,
                 "colorInfo": "#3ce6a2"
             }
         }}>

@@ -9,12 +9,28 @@ export const loginUser = createAsyncThunk(
                 password: arg.password,
             });
             localStorage.setItem("token", res.data.token);
+            axiosInstance.defaults.headers.common["Authorization"] = `Bearer ${res.data.token}`;
+            console.log("login-berhasil")
             return res.data;
         } catch (error) {
             return thunkAPI.rejectWithValue(error.response.data);
         }
     }
 )
+
+
+export const logoutUser = createAsyncThunk(
+    "auth/logout",
+    async (_, thunkAPI) => {
+        try {
+            const response  = await axiosInstance.delete("/logout");
+            console.log("logout berhasil ", response.data)
+        } catch (error) {
+        } finally {
+            localStorage.removeItem("token");
+        }
+    }
+);
 
 export const fetchProfile  = createAsyncThunk(
     "auth/fetchProfile",
@@ -68,6 +84,13 @@ export const auth = createSlice({
                 state.isLoading = false;
                 state.isAuthenticated = false;
                 state.error = action.payload?.message || "Failed fetch user";
+            })
+            .addCase(logoutUser.pending, state => {
+                state.isLoading = true;
+            })
+            .addCase(logoutUser.fulfilled, state => {
+                state.isLoading = false;
+                state.isAuthenticated = false
             })
     }
 })

@@ -180,7 +180,7 @@ const EditService = () => {
             });
 
             // Append new images
-            values['images'].forEach((file,  index) => {
+            values['images']?.forEach((file,  index) => {
                 if (file.originFileObj) {
                     formData.append(`images[${index}]`, file.originFileObj);
                 }

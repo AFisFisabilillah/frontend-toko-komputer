@@ -21,6 +21,12 @@ export function ProtectedRoute({children, redirectTo="/login"}) {
         }
     },[]);
 
+    useEffect(()=>{
+        if(!isAuthenticated){
+            navigate("/login");
+        }
+    },[isAuthenticated])
+
     if(loading){
         return (
             <div className="fixed inset-0 bg-white bg-opacity-75 backdrop-blur-sm flex flex-col justify-center items-center z-50">

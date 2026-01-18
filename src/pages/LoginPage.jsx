@@ -1,7 +1,9 @@
-import { Button, Form, Input, Card, Typography, message } from "antd";
+import {Button, Form, Input, Card, Typography, message, Spin} from "antd";
 import { LockOutlined, UserOutlined } from "@ant-design/icons";
 import {useDispatch, useSelector} from "react-redux";
 import {loginUser} from "../features/auth/authSlice.js";
+import {useEffect} from "react";
+import {useNavigate} from "react-router";
 
 const { Title, Text } = Typography;
 
@@ -9,14 +11,19 @@ export default function LoginPage() {
     const [form] = Form.useForm();
     const dispatch = useDispatch();
     const {loading,isAuthenticated} = useSelector(state => state.auth);
+    const navigate = useNavigate();
 
     async function handleFinish(values) {
         console.log(values);
         dispatch(loginUser(values));
-        if(isAuthenticated){
-            message.success('Login berhasil!');
-        }
     }
+
+    useEffect(()=>{
+        if(isAuthenticated){
+            message.success("login berhasil")
+            navigate('/')
+        }
+    },[isAuthenticated])
 
     function handleFinishFailed(errorInfo) {
         console.log('Failed:', errorInfo);
