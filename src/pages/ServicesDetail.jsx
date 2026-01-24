@@ -215,7 +215,7 @@ const ServiceDetail = () => {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6 print:p-0">
+        <div className="min-h-screen bg-gray-50  py-6 print:p-0">
             <div className="max-w-7xl mx-auto">
                 <div className="mb-6 print:hidden">
                     <Space direction="vertical" size="small">

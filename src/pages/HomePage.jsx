@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, {useState, useEffect} from 'react';
 import {
     Row,
     Col,
@@ -19,7 +19,8 @@ import {
     List,
     Tooltip,
     Spin,
-    Empty
+    Empty,
+    Tabs
 } from 'antd';
 import {
     ShoppingOutlined,
@@ -38,9 +39,13 @@ import {
     ClockCircleOutlined,
     ExclamationCircleOutlined,
     UserOutlined,
-    DatabaseOutlined
+    DatabaseOutlined,
+    ShoppingCartOutlined,
+    CreditCardOutlined,
+    BarChartOutlined,
+    AreaChartOutlined
 } from '@ant-design/icons';
-import { useNavigate } from 'react-router-dom';
+import {useNavigate} from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import {
     LineChart,
@@ -55,19 +60,23 @@ import {
     CartesianGrid,
     Tooltip as RechartsTooltip,
     Legend,
-    ResponsiveContainer
+    ResponsiveContainer,
+    AreaChart,
+    Area
 } from 'recharts';
 import dayjs from 'dayjs';
 
-const { Title, Text } = Typography;
-const { Option } = Select;
-const { RangePicker } = DatePicker;
+const {Title, Text} = Typography;
+const {Option} = Select;
+const {RangePicker} = DatePicker;
+const {TabPane} = Tabs;
 
 const HomePage = () => {
     const [loading, setLoading] = useState(true);
     const [stats, setStats] = useState(null);
-    const [timeRange, setTimeRange] = useState('');
+    const [timeRange, setTimeRange] = useState('this_month');
     const [dateRange, setDateRange] = useState(null);
+    const [activeRevenueTab, setActiveRevenueTab] = useState('monthly');
     const navigate = useNavigate();
 
     // Warna untuk chart
@@ -77,7 +86,16 @@ const HomePage = () => {
         process: '#fa8c16',
         done: '#52c41a',
         taken: '#722ed1',
-        cancelled: '#ff4d4f'
+        cancelled: '#ff4d4f',
+        completed: '#52c41a'
+    };
+
+    const paymentMethodColors = {
+        cash: '#52c41a',
+        transfer: '#1890ff',
+        qris: '#722ed1',
+        debit_card: '#fa8c16',
+        credit_card: '#ff4d4f'
     };
 
     // Fetch data dari API
@@ -90,10 +108,7 @@ const HomePage = () => {
             setLoading(true);
 
             const params = new URLSearchParams();
-            if(timeRange){
-                params.append('range', timeRange);
-
-            }
+            params.append('range', timeRange);
 
             if (dateRange && dateRange[0] && dateRange[1]) {
                 params.append('start_date', dateRange[0].format('YYYY-MM-DD'));
@@ -102,16 +117,34 @@ const HomePage = () => {
 
             const response = await axiosInstance.get(`/dashboard?${params.toString()}`);
             setStats(response.data.dashboard);
-            console.log(response.data.dashboard)
         } catch (error) {
             console.error('Error fetching dashboard data:', error);
-            // Fallback ke data kosong jika API error
-            setStats({
-                overview: { totalProducts: 0, totalServices: 0, totalAdmins: 0, totalRevenue: 0 },
-                recentActivities: [],
-                serviceStats: { total: 0, byStatus: {} },
-                productStats: { total: 0, lowStock: 0, outOfStock: 0, topSelling: [] },
-                revenueData: { monthly: [], categories: [] }
+            import('../assets/data.json').then(module => {
+                setStats(module.default.dashboard);
+            }).catch(() => {
+                setStats({
+                    overview: {
+                        totalProducts: 0,
+                        totalServices: 0,
+                        totalAdmins: 0,
+                        totalSales: 0,
+                        totalRevenue: 0,
+                        todayRevenue: 0,
+                        monthlyRevenue: 0
+                    },
+                    recentActivities: [],
+                    serviceStats: {total: 0, byStatus: {}},
+                    productStats: {total: 0, lowStock: 0, outOfStock: 0, topSelling: []},
+                    salesStats: {
+                        total: 0,
+                        today: 0,
+                        monthly: 0,
+                        averageValue: 0,
+                        byPaymentMethod: {},
+                        recentSales: []
+                    },
+                    revenueData: {monthly: [], categories: [], daily: []}
+                });
             });
         } finally {
             setLoading(false);
@@ -127,62 +160,79 @@ const HomePage = () => {
         }).format(value);
     };
 
-    // Format persentase
-    const formatPercent = (value) => {
-        return `${value.toFixed(1)}%`;
-    };
-
-    // Hitung persentase perubahan
-    const calculateChange = () => {
-        if (!stats || !stats.revenueData.monthly || stats.revenueData.monthly.length < 2) {
-            return { value: 0, trend: 'stable' };
-        }
-
-        const current = stats.revenueData.monthly[stats.revenueData.monthly.length - 1]?.revenue || 0;
-        const previous = stats.revenueData.monthly[stats.revenueData.monthly.length - 2]?.revenue || 1;
-
-        const change = ((current - previous) / previous) * 100;
-
-        return {
-            value: Math.abs(change),
-            trend: change > 0 ? 'up' : change < 0 ? 'down' : 'stable'
-        };
-    };
-
     // Statistic cards
     const statisticCards = stats ? [
         {
             title: 'Total Products',
             value: stats.overview.totalProducts,
-            icon: <ShoppingOutlined />,
+            icon: <ShoppingOutlined/>,
             color: '#1890ff',
-
+            change: '+12%',
+            trend: 'up',
             path: '/products'
         },
         {
             title: 'Total Services',
             value: stats.overview.totalServices,
-            icon: <LaptopOutlined />,
+            icon: <LaptopOutlined/>,
             color: '#52c41a',
+            change: '+8%',
+            trend: 'up',
             path: '/services'
         },
         {
-            title: 'Total Admins',
-            value: stats.overview.totalAdmins,
-            icon: <TeamOutlined />,
+            title: 'Total Sales',
+            value: stats.overview.totalSales,
+            icon: <ShoppingCartOutlined/>,
             color: '#722ed1',
-
-            path: '/admins'
+            change: '+15%',
+            trend: 'up',
+            path: '/sales'
         },
         {
-            title: 'Total Revenue',
-            value: formatCurrency(stats.overview.totalRevenue),
-            icon: <DollarOutlined />,
+            title: 'Today Revenue',
+            value: formatCurrency(stats.overview.todayRevenue),
+            icon: <DollarOutlined/>,
             color: '#fa8c16',
-            change: calculateChange().trend === 'up' ? `+${calculateChange().value.toFixed(1)}%` :
-                calculateChange().trend === 'down' ? `-${calculateChange().value.toFixed(1)}%` : '0%',
-            trend: calculateChange().trend,
-            path: '/services'
+            change: '+18%',
+            trend: 'up',
+            path: '/sales'
+        }
+    ] : [];
+
+    // Sales statistic cards
+    const salesStatCards = stats ? [
+        {
+            title: 'Monthly Sales',
+            value: stats?.salesStats?.monthly,
+            icon: <BarChartOutlined/>,
+            color: '#1890ff',
+            change: '+22%',
+            trend: 'up'
+        },
+        {
+            title: 'Today Sales',
+            value: stats.salesStats.today,
+            icon: <AreaChartOutlined/>,
+            color: '#52c41a',
+            change: '+5',
+            trend: 'up'
+        },
+        {
+            title: 'Avg Sale Value',
+            value: formatCurrency(stats.salesStats.averageValue),
+            icon: <CreditCardOutlined/>,
+            color: '#722ed1',
+            change: '+8%',
+            trend: 'up'
+        },
+        {
+            title: 'Monthly Revenue',
+            value: formatCurrency(stats.overview.monthlyRevenue),
+            icon: <DollarOutlined/>,
+            color: '#fa8c16',
+            change: '+25%',
+            trend: 'up'
         }
     ] : [];
 
@@ -191,6 +241,13 @@ const HomePage = () => {
         name: status.charAt(0).toUpperCase() + status.slice(1),
         value: count,
         color: statusColors[status]
+    })) : [];
+
+    // Sales payment method data
+    const salesPaymentData = stats ? Object.entries(stats.salesStats.byPaymentMethod).map(([method, count]) => ({
+        name: method.charAt(0).toUpperCase() + method.slice(1),
+        value: count,
+        color: paymentMethodColors[method]
     })) : [];
 
     // Revenue categories data untuk chart
@@ -204,18 +261,17 @@ const HomePage = () => {
     const topSellingColumns = [
         {
             title: 'Product',
-            dataIndex: 'name',
-            key: 'name',
-            render: (text) => (
+            key: 'product',
+            render: (record) => (
                 <div className="flex items-center">
                     <Avatar
                         size="small"
                         className="mr-2"
-                        style={{ backgroundColor: COLORS[Math.floor(Math.random() * COLORS.length)] }}
+                        style={{backgroundColor: COLORS[Math.floor(Math.random() * COLORS.length)]}}
                     >
-                        {text.charAt(0)}
+                        {record.name.charAt(0)}
                     </Avatar>
-                    <span className="font-medium">{text}</span>
+                    <span className="font-medium">{record.name}</span>
                 </div>
             ),
         },
@@ -228,10 +284,47 @@ const HomePage = () => {
             ),
         },
         {
-            title: 'Status',
-            key: 'status',
-            render: () => (
-                <Tag color="green">Active</Tag>
+            title: 'Revenue',
+            key: 'revenue',
+            render: (_, record) => (
+                <span className="font-semibold">
+          {formatCurrency(record.sold * 100000)}
+        </span>
+            ),
+        },
+    ];
+
+    // Recent sales columns
+    const recentSalesColumns = [
+        {
+            title: 'Invoice',
+            dataIndex: 'invoice',
+            key: 'invoice',
+            render: (invoice) => (
+                <span className="font-mono text-xs">{invoice}</span>
+            ),
+        },
+        {
+            title: 'Customer',
+            dataIndex: 'customer',
+            key: 'customer',
+        },
+        {
+            title: 'Amount',
+            dataIndex: 'amount',
+            key: 'amount',
+            render: (amount) => (
+                <span className="font-semibold">
+          Rp {amount.toLocaleString('id-ID')}
+        </span>
+            ),
+        },
+        {
+            title: 'Payment',
+            dataIndex: 'payment',
+            key: 'payment',
+            render: (payment) => (
+                <Tag color={paymentMethodColors[payment]}>{payment}</Tag>
             ),
         },
     ];
@@ -242,26 +335,30 @@ const HomePage = () => {
         let color;
 
         switch (activity.type) {
-            case 'service':
-                icon = <LaptopOutlined />;
-                color = '#1890ff';
-                break;
-            case 'product':
-                icon = <ShoppingOutlined />;
-                color = '#52c41a';
-                break;
-            case 'admin':
-                icon = <TeamOutlined />;
+            case 'sale':
+                icon = <ShoppingCartOutlined/>;
                 color = '#722ed1';
                 break;
+            case 'service':
+                icon = <LaptopOutlined/>;
+                color = '#52c41a';
+                break;
+            case 'product':
+                icon = <ShoppingOutlined/>;
+                color = '#1890ff';
+                break;
+            case 'admin':
+                icon = <TeamOutlined/>;
+                color = '#fa8c16';
+                break;
             default:
-                icon = <CheckCircleOutlined />;
+                icon = <CheckCircleOutlined/>;
                 color = '#1890ff';
         }
 
         return {
             color,
-            dot: <Avatar size="small" icon={icon} style={{ backgroundColor: color }} />,
+            dot: <Avatar size="small" icon={icon} style={{backgroundColor: color}}/>,
             children: (
                 <div className="ml-4">
                     <div className="flex justify-between">
@@ -271,12 +368,22 @@ const HomePage = () => {
                     {activity.description && (
                         <Text type="secondary" className="text-sm">{activity.description}</Text>
                     )}
-                    <Tag
-                        color={statusColors[activity.status] || 'default'}
-                        className="mt-1"
-                    >
-                        {activity.status}
-                    </Tag>
+                    {activity.customer && (
+                        <Text type="secondary" className="text-sm">Customer: {activity.customer}</Text>
+                    )}
+                    {activity.amount && (
+                        <Text type="secondary" className="text-sm">
+                            Amount: Rp {activity.amount.toLocaleString('id-ID')}
+                        </Text>
+                    )}
+                    {activity.status && (
+                        <Tag
+                            color={statusColors[activity.status] || 'default'}
+                            className="mt-1"
+                        >
+                            {activity.status}
+                        </Tag>
+                    )}
                 </div>
             ),
         };
@@ -301,7 +408,7 @@ const HomePage = () => {
     if (loading && !stats) {
         return (
             <div className="min-h-screen bg-gray-50 p-6 flex items-center justify-center">
-                <Spin size="large" tip="Loading dashboard data..." />
+                <Spin size="large" tip="Loading dashboard data..."/>
             </div>
         );
     }
@@ -319,7 +426,7 @@ const HomePage = () => {
                                     timeRange === 'this_month' ? "This Month's Statistics" :
                                         timeRange === 'this_year' ? "This Year's Statistics" :
                                             dateRange ? `Statistics from ${dateRange[0]?.format('DD MMM YYYY')} to ${dateRange[1]?.format('DD MMM YYYY')}` :
-                                                "Real-time Statistics"}
+                                                "Real-time Business Analytics"}
                             </Text>
                         </Col>
                         <Col xs={24} md={12} className="text-right">
@@ -327,7 +434,7 @@ const HomePage = () => {
                                 <Select
                                     value={timeRange}
                                     onChange={handleTimeRangeChange}
-                                    style={{ width: 140 }}
+                                    style={{width: 140}}
                                     size="large"
                                 >
                                     <Option value="today">Today</Option>
@@ -341,12 +448,12 @@ const HomePage = () => {
                                         size="large"
                                         value={dateRange}
                                         onChange={handleDateRangeChange}
-                                        suffixIcon={<CalendarOutlined />}
+                                        suffixIcon={<CalendarOutlined/>}
                                     />
                                 )}
 
                                 <Button
-                                    icon={<ReloadOutlined />}
+                                    icon={<ReloadOutlined/>}
                                     onClick={fetchDashboardData}
                                     loading={loading}
                                 >
@@ -372,22 +479,61 @@ const HomePage = () => {
                                         <Title level={3} className="!my-2 !text-2xl">{card.value}</Title>
                                         <div className="flex items-center">
                                             {card.trend === 'up' ? (
-                                                <ArrowUpOutlined className="text-green-500 mr-1" />
+                                                <ArrowUpOutlined className="text-green-500 mr-1"/>
                                             ) : card.trend === 'down' ? (
-                                                <ArrowDownOutlined className="text-red-500 mr-1" />
+                                                <ArrowDownOutlined className="text-red-500 mr-1"/>
                                             ) : null}
-                                            <Text type={card.trend === 'up' ? 'success' : card.trend === 'down' ? 'danger' : 'secondary'}>
+                                            <Text
+                                                type={card.trend === 'up' ? 'success' : card.trend === 'down' ? 'danger' : 'secondary'}>
                                                 {card.change} from last period
                                             </Text>
                                         </div>
                                     </div>
                                     <div
                                         className="p-3 rounded-lg"
-                                        style={{ backgroundColor: `${card.color}15` }}
+                                        style={{backgroundColor: `${card.color}15`}}
                                     >
                                         <div
                                             className="text-2xl"
-                                            style={{ color: card.color }}
+                                            style={{color: card.color}}
+                                        >
+                                            {card.icon}
+                                        </div>
+                                    </div>
+                                </div>
+                            </Card>
+                        </Col>
+                    ))}
+                </Row>
+
+                {/* Sales Stats Cards */}
+                <Row gutter={[16, 16]} className="mb-6">
+                    {salesStatCards.map((card, index) => (
+                        <Col xs={24} sm={12} lg={6} key={index}>
+                            <Card className="shadow-sm">
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <Text type="secondary" className="text-sm">{card.title}</Text>
+                                        <Title level={3} className="!my-2 !text-xl">{card.value}</Title>
+                                        <div className="flex items-center">
+                                            {card.trend === 'up' ? (
+                                                <ArrowUpOutlined className="text-green-500 mr-1"/>
+                                            ) : card.trend === 'down' ? (
+                                                <ArrowDownOutlined className="text-red-500 mr-1"/>
+                                            ) : null}
+                                            <Text
+                                                type={card.trend === 'up' ? 'success' : card.trend === 'down' ? 'danger' : 'secondary'}>
+                                                {card.change}
+                                            </Text>
+                                        </div>
+                                    </div>
+                                    <div
+                                        className="p-3 rounded-lg"
+                                        style={{backgroundColor: `${card.color}15`}}
+                                    >
+                                        <div
+                                            className="text-2xl"
+                                            style={{color: card.color}}
                                         >
                                             {card.icon}
                                         </div>
@@ -405,46 +551,84 @@ const HomePage = () => {
                         <Card
                             title={
                                 <Space>
-                                    <LineChartOutlined />
-                                    <span>Revenue Overview</span>
+                                    <LineChartOutlined/>
+                                    <span>Revenue Analytics</span>
                                 </Space>
                             }
                             className="shadow-sm h-full"
                             extra={
-                                <Button type="link" icon={<DownloadOutlined />}>
-                                    Export
-                                </Button>
+                                <Tabs
+                                    activeKey={activeRevenueTab}
+                                    onChange={setActiveRevenueTab}
+                                    size="small"
+                                >
+                                    <TabPane tab="Monthly" key="monthly"/>
+                                    <TabPane tab="Daily" key="daily"/>
+                                </Tabs>
                             }
                             loading={loading}
                         >
                             {stats && stats.revenueData.monthly.length > 0 ? (
-                                <div className="chart-container" style={{ height: 300 }}>
+                                <div className="chart-container" style={{height: 300}}>
                                     <ResponsiveContainer width="100%" height="100%">
-                                        <LineChart
-                                            data={stats.revenueData.monthly}
-                                            margin={{ top: 5, right: 30, left: 20, bottom: 5 }}
-                                        >
-                                            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-                                            <XAxis dataKey="month" stroke="#666" />
-                                            <YAxis
-                                                stroke="#666"
-                                                tickFormatter={(value) => `Rp${value > 1000000 ? `${(value / 1000000).toFixed(0)}M` : `${(value / 1000).toFixed(0)}K`}`}
-                                            />
-                                            <RechartsTooltip
-                                                formatter={(value) => [formatCurrency(value), 'Revenue']}
-                                                labelFormatter={(label) => `Month: ${label}`}
-                                            />
-                                            <Legend />
-                                            <Line
-                                                type="monotone"
-                                                dataKey="revenue"
-                                                name="Revenue"
-                                                stroke="#1890ff"
-                                                strokeWidth={3}
-                                                dot={{ r: 4 }}
-                                                activeDot={{ r: 6 }}
-                                            />
-                                        </LineChart>
+                                        {activeRevenueTab === 'monthly' ? (
+                                            <LineChart
+                                                data={stats.revenueData.monthly}
+                                                margin={{top: 5, right: 30, left: 20, bottom: 5}}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                                                <XAxis dataKey="month" stroke="#666"/>
+                                                <YAxis
+                                                    stroke="#666"
+                                                    tickFormatter={(value) => `Rp${value > 1000000 ? `${(value / 1000000).toFixed(0)}M` : `${(value / 1000).toFixed(0)}K`}`}
+                                                />
+                                                <RechartsTooltip
+                                                    formatter={(value) => [formatCurrency(value), 'Revenue']}
+                                                    labelFormatter={(label) => `Month: ${label}`}
+                                                />
+                                                <Legend/>
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="revenue"
+                                                    name="Total Revenue"
+                                                    stroke="#1890ff"
+                                                    strokeWidth={3}
+                                                    dot={{r: 4}}
+                                                    activeDot={{r: 6}}
+                                                />
+                                                <Line
+                                                    type="monotone"
+                                                    dataKey="sales"
+                                                    name="Sales Count"
+                                                    stroke="#52c41a"
+                                                    strokeWidth={2}
+                                                />
+                                            </LineChart>
+                                        ) : (
+                                            <AreaChart
+                                                data={stats.revenueData.daily}
+                                                margin={{top: 5, right: 30, left: 20, bottom: 5}}
+                                            >
+                                                <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0"/>
+                                                <XAxis dataKey="day" stroke="#666"/>
+                                                <YAxis
+                                                    stroke="#666"
+                                                    tickFormatter={(value) => `Rp${(value / 1000).toFixed(0)}K`}
+                                                />
+                                                <RechartsTooltip
+                                                    formatter={(value) => [formatCurrency(value), 'Revenue']}
+                                                    labelFormatter={(label) => `Day: ${label}`}
+                                                />
+                                                <Area
+                                                    type="monotone"
+                                                    dataKey="revenue"
+                                                    name="Daily Revenue"
+                                                    stroke="#fa8c16"
+                                                    fill="#fa8c16"
+                                                    fillOpacity={0.3}
+                                                />
+                                            </AreaChart>
+                                        )}
                                     </ResponsiveContainer>
                                 </div>
                             ) : (
@@ -457,74 +641,142 @@ const HomePage = () => {
                         </Card>
                     </Col>
 
-                    {/* Service Status Distribution */}
+                    {/* Charts Right Column */}
                     <Col xs={24} lg={8}>
-                        <Card
-                            title={
-                                <Space>
-                                    <PieChartOutlined />
-                                    <span>Service Status Distribution</span>
-                                </Space>
-                            }
-                            className="shadow-sm h-full"
-                            loading={loading}
-                        >
-                            {serviceStatusData.length > 0 ? (
-                                <>
-                                    <div className="chart-container" style={{ height: 250 }}>
-                                        <ResponsiveContainer width="100%" height="100%">
-                                            <PieChart>
-                                                <Pie
-                                                    data={serviceStatusData}
-                                                    cx="50%"
-                                                    cy="50%"
-                                                    labelLine={false}
-                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                                                    outerRadius={70}
-                                                    fill="#8884d8"
-                                                    dataKey="value"
-                                                >
-                                                    {serviceStatusData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
-                                                    ))}
-                                                </Pie>
-                                                <RechartsTooltip formatter={(value) => [`${value} services`, 'Count']} />
-                                            </PieChart>
-                                        </ResponsiveContainer>
-                                    </div>
+                        <div className="space-y-6">
+                            {/* Service Status Distribution */}
+                            <Card
+                                title={
+                                    <Space>
+                                        <PieChartOutlined/>
+                                        <span>Service Status</span>
+                                    </Space>
+                                }
+                                className="shadow-sm"
+                                loading={loading}
+                            >
+                                {serviceStatusData.length > 0 ? (
+                                    <>
+                                        <div className="chart-container" style={{height: 200}}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={serviceStatusData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        labelLine={false}
+                                                        label={({
+                                                                    name,
+                                                                    percent
+                                                                }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                        outerRadius={70}
+                                                        fill="#8884d8"
+                                                        dataKey="value"
+                                                    >
+                                                        {serviceStatusData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color}/>
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        formatter={(value) => [`${value} services`, 'Count']}/>
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
 
-                                    <div className="mt-4 grid grid-cols-2 gap-2">
-                                        {serviceStatusData.map((item, index) => (
-                                            <div key={index} className="flex items-center">
-                                                <div
-                                                    className="w-3 h-3 rounded-full mr-2"
-                                                    style={{ backgroundColor: item.color }}
-                                                />
-                                                <Text className="text-sm">{item.name}</Text>
-                                                <Text strong className="ml-auto">{item.value}</Text>
-                                            </div>
-                                        ))}
-                                    </div>
-                                </>
-                            ) : (
-                                <Empty
-                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
-                                    description="No service data available"
-                                    className="py-8"
-                                />
-                            )}
-                        </Card>
+                                        <div className="mt-4 grid grid-cols-2 gap-2">
+                                            {serviceStatusData.map((item, index) => (
+                                                <div key={index} className="flex items-center">
+                                                    <div
+                                                        className="w-3 h-3 rounded-full mr-2"
+                                                        style={{backgroundColor: item.color}}
+                                                    />
+                                                    <Text className="text-sm">{item.name}</Text>
+                                                    <Text strong className="ml-auto">{item.value}</Text>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description="No service data available"
+                                        className="py-8"
+                                    />
+                                )}
+                            </Card>
+
+                            {/* Sales Payment Methods */}
+                            <Card
+                                title={
+                                    <Space>
+                                        <CreditCardOutlined/>
+                                        <span>Payment Methods</span>
+                                    </Space>
+                                }
+                                className="shadow-sm"
+                                loading={loading}
+                            >
+                                {salesPaymentData.length > 0 ? (
+                                    <>
+                                        <div className="chart-container" style={{height: 200}}>
+                                            <ResponsiveContainer width="100%" height="100%">
+                                                <PieChart>
+                                                    <Pie
+                                                        data={salesPaymentData}
+                                                        cx="50%"
+                                                        cy="50%"
+                                                        innerRadius={40}
+                                                        outerRadius={70}
+                                                        paddingAngle={5}
+                                                        dataKey="value"
+                                                        label={({
+                                                                    name,
+                                                                    percent
+                                                                }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                    >
+                                                        {salesPaymentData.map((entry, index) => (
+                                                            <Cell key={`cell-${index}`} fill={entry.color}/>
+                                                        ))}
+                                                    </Pie>
+                                                    <RechartsTooltip
+                                                        formatter={(value) => [`${value} transactions`, 'Count']}/>
+                                                </PieChart>
+                                            </ResponsiveContainer>
+                                        </div>
+
+                                        <div className="mt-4">
+                                            {salesPaymentData.map((item, index) => (
+                                                <div key={index} className="flex items-center mb-2">
+                                                    <div
+                                                        className="w-3 h-3 rounded-full mr-2"
+                                                        style={{backgroundColor: item.color}}
+                                                    />
+                                                    <Text className="text-sm">{item.name}</Text>
+                                                    <Text strong className="ml-auto">{item.value}</Text>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    </>
+                                ) : (
+                                    <Empty
+                                        image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        description="No payment data available"
+                                        className="py-8"
+                                    />
+                                )}
+                            </Card>
+                        </div>
                     </Col>
                 </Row>
 
                 {/* Bottom Section */}
                 <Row gutter={[16, 16]}>
                     {/* Top Selling Products */}
-                    <Col xs={24} lg={12}>
+                    <Col xs={24} lg={8}>
                         <Card
                             title={
                                 <Space>
-                                    <ShoppingOutlined />
+                                    <ShoppingOutlined/>
                                     <span>Top Selling Products</span>
                                 </Space>
                             }
@@ -546,7 +798,7 @@ const HomePage = () => {
                                         size="small"
                                     />
 
-                                    <Divider />
+                                    <Divider/>
 
                                     <Row gutter={16}>
                                         <Col span={12}>
@@ -554,8 +806,8 @@ const HomePage = () => {
                                                 <Statistic
                                                     title="Low Stock"
                                                     value={stats.productStats.lowStock}
-                                                    valueStyle={{ color: '#fa8c16' }}
-                                                    prefix={<ExclamationCircleOutlined />}
+                                                    valueStyle={{color: '#fa8c16'}}
+                                                    prefix={<ExclamationCircleOutlined/>}
                                                 />
                                             </Card>
                                         </Col>
@@ -564,8 +816,8 @@ const HomePage = () => {
                                                 <Statistic
                                                     title="Out of Stock"
                                                     value={stats.productStats.outOfStock}
-                                                    valueStyle={{ color: '#ff4d4f' }}
-                                                    prefix={<ExclamationCircleOutlined />}
+                                                    valueStyle={{color: '#ff4d4f'}}
+                                                    prefix={<ExclamationCircleOutlined/>}
                                                 />
                                             </Card>
                                         </Col>
@@ -581,31 +833,79 @@ const HomePage = () => {
                         </Card>
                     </Col>
 
-                    {/* Recent Activities */}
-                    <Col xs={24} lg={12}>
+                    {/* Recent Sales */}
+                    <Col xs={24} lg={8}>
                         <Card
                             title={
                                 <Space>
-                                    <ClockCircleOutlined />
-                                    <span>Recent Activities</span>
+                                    <ShoppingCartOutlined/>
+                                    <span>Recent Sales</span>
                                 </Space>
                             }
                             className="shadow-sm h-full"
                             extra={
-                                <Button type="link" onClick={() => navigate('/services')}>
+                                <Button type="link" onClick={() => navigate('/sales')}>
                                     View All
                                 </Button>
                             }
                             loading={loading}
                         >
-                            {activityItems.length > 0 ? (
+                            {stats && stats.salesStats.recentSales.length > 0 ? (
                                 <>
-                                    <Timeline
-                                        items={activityItems}
-                                        className="mt-4"
+                                    <Table
+                                        columns={recentSalesColumns}
+                                        dataSource={stats.salesStats.recentSales}
+                                        rowKey="invoice"
+                                        pagination={false}
+                                        size="small"
+                                        scroll={{y: 200}}
                                     />
 
-                                    <Divider />
+                                    <Divider/>
+
+                                    <div className="text-center">
+                                        <Button
+                                            type="primary"
+                                            onClick={() => navigate('/sales/create')}
+                                            className="bg-purple-600 hover:bg-purple-700"
+                                        >
+                                            <ShoppingCartOutlined className="mr-2"/>
+                                            Create New Sale
+                                        </Button>
+                                    </div>
+                                </>
+                            ) : (
+                                <Empty
+                                    image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                    description="No recent sales data"
+                                    className="py-8"
+                                />
+                            )}
+                        </Card>
+                    </Col>
+
+                    {/* Recent Activities */}
+                    <Col xs={24} lg={8}>
+                        <Card
+                            title={
+                                <Space>
+                                    <ClockCircleOutlined/>
+                                    <span>Recent Activities</span>
+                                </Space>
+                            }
+                            className="shadow-sm h-full"
+                            loading={loading}
+                        >
+                            {activityItems.length > 0 ? (
+                                <>
+                                    <div style={{maxHeight: 300, overflowY: 'auto'}}>
+                                        <Timeline
+                                            items={activityItems}
+                                            className="mt-4 pr-2"
+                                        />
+                                    </div>
+
+                                    <Divider/>
 
                                     <div className="text-center">
                                         <Button
@@ -613,15 +913,8 @@ const HomePage = () => {
                                             onClick={() => navigate('/services/create')}
                                             className="bg-blue-600 hover:bg-blue-700"
                                         >
-                                            <LaptopOutlined className="mr-2" />
-                                            Create New Service
-                                        </Button>
-                                        <Button
-                                            className="ml-3"
-                                            onClick={() => navigate('/products/create')}
-                                        >
-                                            <ShoppingOutlined className="mr-2" />
-                                            Add New Product
+                                            <LaptopOutlined className="mr-2"/>
+                                            New Service
                                         </Button>
                                     </div>
                                 </>
@@ -636,7 +929,7 @@ const HomePage = () => {
                     </Col>
                 </Row>
 
-                {/* Quick Stats & Revenue Categories */}
+                {/* Quick Stats */}
                 <Row gutter={[16, 16]} className="mt-6">
                     <Col xs={24} lg={16}>
                         <Card title="Service Status Overview" className="shadow-sm" loading={loading}>
@@ -696,7 +989,7 @@ const HomePage = () => {
                         >
                             {revenueCategoriesData.length > 0 ? (
                                 <>
-                                    <div className="chart-container" style={{ height: 200 }}>
+                                    <div className="chart-container" style={{height: 200}}>
                                         <ResponsiveContainer width="100%" height="100%">
                                             <PieChart>
                                                 <Pie
@@ -707,13 +1000,16 @@ const HomePage = () => {
                                                     outerRadius={70}
                                                     paddingAngle={5}
                                                     dataKey="value"
-                                                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                                                    label={({
+                                                                name,
+                                                                percent
+                                                            }) => `${name}: ${(percent * 100).toFixed(0)}%`}
                                                 >
                                                     {revenueCategoriesData.map((entry, index) => (
-                                                        <Cell key={`cell-${index}`} fill={entry.color} />
+                                                        <Cell key={`cell-${index}`} fill={entry.color}/>
                                                     ))}
                                                 </Pie>
-                                                <RechartsTooltip formatter={(value) => [`${value}%`, 'Percentage']} />
+                                                <RechartsTooltip formatter={(value) => [`${value}%`, 'Percentage']}/>
                                             </PieChart>
                                         </ResponsiveContainer>
                                     </div>
@@ -737,48 +1033,70 @@ const HomePage = () => {
                 <Card className="mt-6 shadow-sm">
                     <Title level={4} className="!mb-4">Quick Actions</Title>
                     <Row gutter={[16, 16]}>
-                        <Col xs={12} md={6}>
+                        <Col xs={12} md={4}>
+                            <Card
+                                hoverable
+                                className="text-center"
+                                onClick={() => navigate('/sales/create')}
+                            >
+                                <ShoppingCartOutlined className="text-3xl text-purple-500 mb-3"/>
+                                <div className="font-medium">New Sale</div>
+                                <Text type="secondary" className="text-sm">Create sale transaction</Text>
+                            </Card>
+                        </Col>
+                        <Col xs={12} md={4}>
                             <Card
                                 hoverable
                                 className="text-center"
                                 onClick={() => navigate('/services/create')}
                             >
-                                <LaptopOutlined className="text-3xl text-blue-500 mb-3" />
+                                <LaptopOutlined className="text-3xl text-blue-500 mb-3"/>
                                 <div className="font-medium">New Service</div>
                                 <Text type="secondary" className="text-sm">Create service request</Text>
                             </Card>
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={12} md={4}>
                             <Card
                                 hoverable
                                 className="text-center"
                                 onClick={() => navigate('/products/create')}
                             >
-                                <ShoppingOutlined className="text-3xl text-green-500 mb-3" />
+                                <ShoppingOutlined className="text-3xl text-green-500 mb-3"/>
                                 <div className="font-medium">Add Product</div>
                                 <Text type="secondary" className="text-sm">Add new product</Text>
                             </Card>
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={12} md={4}>
                             <Card
                                 hoverable
                                 className="text-center"
                                 onClick={() => navigate('/admins')}
                             >
-                                <TeamOutlined className="text-3xl text-purple-500 mb-3" />
+                                <TeamOutlined className="text-3xl text-orange-500 mb-3"/>
                                 <div className="font-medium">Manage Admins</div>
                                 <Text type="secondary" className="text-sm">View all admins</Text>
                             </Card>
                         </Col>
-                        <Col xs={12} md={6}>
+                        <Col xs={12} md={4}>
                             <Card
                                 hoverable
                                 className="text-center"
-                                onClick={() => navigate('/services/import')}
+                                onClick={() => navigate('/sales/import')}
                             >
-                                <DatabaseOutlined className="text-3xl text-orange-500 mb-3" />
+                                <DatabaseOutlined className="text-3xl text-red-500 mb-3"/>
                                 <div className="font-medium">Bulk Import</div>
-                                <Text type="secondary" className="text-sm">Import services/products</Text>
+                                <Text type="secondary" className="text-sm">Import sales data</Text>
+                            </Card>
+                        </Col>
+                        <Col xs={12} md={4}>
+                            <Card
+                                hoverable
+                                className="text-center"
+                                onClick={() => navigate('/dashboard')}
+                            >
+                                <DownloadOutlined className="text-3xl text-cyan-500 mb-3"/>
+                                <div className="font-medium">Export Reports</div>
+                                <Text type="secondary" className="text-sm">Download analytics</Text>
                             </Card>
                         </Col>
                     </Row>
@@ -788,6 +1106,13 @@ const HomePage = () => {
                 <div className="mt-6 text-center">
                     <Text type="secondary" className="text-sm">
                         Data last updated: {dayjs().format('DD MMMM YYYY HH:mm:ss')}
+                        {stats && (
+                            <span className="ml-4">
+                • Total Revenue: {formatCurrency(stats.overview.totalRevenue)}
+                                • Total Sales: {stats.overview.totalSales}
+                                • Total Services: {stats.overview.totalServices}
+              </span>
+                        )}
                     </Text>
                 </div>
             </div>

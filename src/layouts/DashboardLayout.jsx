@@ -31,10 +31,10 @@ export function DashboardLayout() {
                 <Sidebar/>
                 <Layout>
                     <Navbar/>
-                    <Content style={{ margin: '0 16px' }}>
+                    <Content style={{ margin: '0 2px' }}>
                         <div
                             style={{
-                                padding: 24,
+                                padding: 12,
                                 minHeight: 360,
                                 background: colorBgContainer,
                                 borderRadius: borderRadiusLG,

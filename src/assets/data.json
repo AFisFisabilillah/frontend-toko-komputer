@@ -4,11 +4,24 @@
       "totalProducts": 156,
       "totalServices": 89,
       "totalAdmins": 8,
-      "totalRevenue": 48500000
+      "totalSales": 42,
+      "totalRevenue": 48500000,
+      "todayRevenue": 1250000,
+      "monthlyRevenue": 28500000
     },
     "recentActivities": [
       {
         "id": 1,
+        "type": "sale",
+        "title": "New Sale",
+        "description": "Invoice INV-20260121010328-TXDS",
+        "customer": "Rudeus",
+        "amount": 190000,
+        "status": "completed",
+        "time": "1 hour ago"
+      },
+      {
+        "id": 2,
         "type": "service",
         "title": "New Service Request",
         "description": "Laptop repair from John Doe",
@@ -16,12 +29,30 @@
         "time": "2 hours ago"
       },
       {
+        "id": 3,
+        "type": "product",
+        "title": "Product Added",
+        "description": "SSD NVMe 1TB added to inventory",
+        "status": "success",
+        "time": "4 hours ago"
+      },
+      {
         "id": 4,
-        "type": "service",
-        "title": "Service Completed",
-        "description": "Laptop screen replacement",
-        "status": "done",
-        "time": "2 days ago"
+        "type": "sale",
+        "title": "Sale Completed",
+        "description": "Invoice INV-20260120144619-TJZF",
+        "customer": "name 10",
+        "amount": 120000,
+        "status": "completed",
+        "time": "1 day ago"
+      },
+      {
+        "id": 5,
+        "type": "admin",
+        "title": "Admin Created",
+        "username": "afissss",
+        "status": "success",
+        "time": "1 day ago"
       }
     ],
     "serviceStats": {
@@ -32,7 +63,8 @@
         "done": 40,
         "taken": 24,
         "cancelled": 2
-      }
+      },
+      "monthlyTrend": [12, 19, 8, 15, 22, 18, 25, 30, 28, 32, 35, 40]
     },
     "productStats": {
       "total": 156,
@@ -46,18 +78,77 @@
         { "name": "Mouse Wireless", "sold": 25 }
       ]
     },
+    "salesStats": {
+      "total": 42,
+      "today": 3,
+      "monthly": 15,
+      "averageValue": 150000,
+      "byPaymentMethod": {
+        "cash": 25,
+        "transfer": 10,
+        "qris": 5,
+        "debit_card": 1,
+        "credit_card": 1
+      },
+      "recentSales": [
+        {
+          "invoice": "INV-20260121010328-TXDS",
+          "customer": "Rudeus",
+          "amount": 190000,
+          "payment": "cash",
+          "time": "1 hour ago"
+        },
+        {
+          "invoice": "INV-20260120144619-TJZF",
+          "customer": "name 10",
+          "amount": 120000,
+          "payment": "cash",
+          "time": "1 day ago"
+        },
+        {
+          "invoice": "INV-20260120144618-SEJI",
+          "customer": "name 1",
+          "amount": 120000,
+          "payment": "transfer",
+          "time": "1 day ago"
+        },
+        {
+          "invoice": "INV-20260120133209",
+          "customer": "Rudeus",
+          "amount": 110000,
+          "payment": "qris",
+          "time": "2 days ago"
+        },
+        {
+          "invoice": "INV-20260120133217",
+          "customer": "Rudeus",
+          "amount": 190000,
+          "payment": "cash",
+          "time": "2 days ago"
+        }
+      ]
+    },
     "revenueData": {
       "monthly": [
-        { "month": "Jan", "revenue": 3200000 },
-        { "month": "Feb", "revenue": 4200000 },
-        { "month": "Mar", "revenue": 3800000 },
-        { "month": "Apr", "revenue": 4500000 },
-        { "month": "May", "revenue": 5200000 },
-        { "month": "Jun", "revenue": 6100000 }
+        { "month": "Jan", "revenue": 3200000, "sales": 8, "services": 5 },
+        { "month": "Feb", "revenue": 4200000, "sales": 10, "services": 6 },
+        { "month": "Mar", "revenue": 3800000, "sales": 9, "services": 5 },
+        { "month": "Apr", "revenue": 4500000, "sales": 12, "services": 7 },
+        { "month": "May", "revenue": 5200000, "sales": 14, "services": 8 },
+        { "month": "Jun", "revenue": 6100000, "sales": 16, "services": 10 }
       ],
       "categories": [
-        { "category": "Service", "value": 65 },
-        { "category": "Products", "value": 35 }
+        { "category": "Sales", "value": 65 },
+        { "category": "Services", "value": 35 }
+      ],
+      "daily": [
+        { "day": "Mon", "revenue": 1200000 },
+        { "day": "Tue", "revenue": 1500000 },
+        { "day": "Wed", "revenue": 1300000 },
+        { "day": "Thu", "revenue": 1800000 },
+        { "day": "Fri", "revenue": 2100000 },
+        { "day": "Sat", "revenue": 1900000 },
+        { "day": "Sun", "revenue": 1400000 }
       ]
     }
   }

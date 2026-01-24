@@ -2,7 +2,7 @@ import {
     HomeOutlined, ImportOutlined,
     PlusOutlined,
     ProductOutlined,
-    RedoOutlined, TeamOutlined,
+    RedoOutlined, ShoppingCartOutlined, TeamOutlined,
     ToolOutlined,
     UnorderedListOutlined, UserOutlined
 } from "@ant-design/icons";
@@ -72,6 +72,32 @@ const menuItems = [
         ]
     },
     {
+        key: "/sales",
+        icon:<ShoppingCartOutlined />,
+        label:"Penjualan",
+        children: [
+            {
+                key: "/sales",
+                icon: <UnorderedListOutlined />,
+                label: <Link to="/sales">Penjualan</Link>,
+            },
+            {
+                key: "/sales/create",
+                icon: <PlusOutlined />,
+                label:<Link to="/sales/create">Create Penjualan</Link>,
+            },
+            {
+                key: "/sales/trashed",
+                icon:<RedoOutlined/>,
+                label:<Link to="/sales/trashed">Trash Penjualan</Link>,
+            },{
+                key: "/sales/import",
+                icon:<ImportOutlined/>,
+                label:<Link to="/sales/import">Import Penjualan</Link>,
+            }
+        ]
+    },
+    {
         key: '/admins',
         icon: <TeamOutlined />,
         label: <Link to="/admins">Admins</Link>,
@@ -80,7 +106,11 @@ const menuItems = [
         key: '/profile',
         icon: <UserOutlined />,
         label: <Link to="/profile">My Profile</Link>,
-    },
+    },{
+        key: '/profile',
+        icon: <UserOutlined />,
+        label: <Link to="/sales">My Profile</Link>,
+    }
 ];
 
 

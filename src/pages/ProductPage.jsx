@@ -274,7 +274,7 @@ const Products = () => {
     ];
 
     return (
-        <div className="min-h-screen bg-gray-50 p-6">
+        <div className="min-h-screen bg-gray-50 px-1 py-6">
             <Card className="shadow-lg">
                 <div className="mb-6">
                     <Row gutter={16} align="middle" justify="space-between">
