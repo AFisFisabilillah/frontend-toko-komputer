@@ -31,6 +31,7 @@ import {
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import dayjs from 'dayjs';
+import {PrintServiceQrCode} from "../components/PrintServiceQrCode.jsx";
 
 const { Title, Text } = Typography;
 
@@ -85,7 +86,7 @@ const ServiceDetail = () => {
     };
 
     const handlePrint = () => {
-        window.print();
+
     };
 
     const productColumns = [
@@ -427,14 +428,7 @@ const ServiceDetail = () => {
                                     >
                                         Chat Customer
                                     </Button>
-                                    <Button
-                                        icon={<PrinterOutlined />}
-                                        size="large"
-                                        onClick={handlePrint}
-                                        className="w-full"
-                                    >
-                                        Print Receipt
-                                    </Button>
+                                   <PrintServiceQrCode service={service}/>
                                     <Button
                                         danger
                                         icon={<DeleteOutlined />}

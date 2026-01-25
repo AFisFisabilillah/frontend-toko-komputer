@@ -1,2 +1,29 @@
 @import "tailwindcss";
 
+@media print {
+    @page {
+        size: 80mm;
+        height: max-content;
+        margin: 0;
+    }
+
+    body {
+        margin: 0;
+    }
+}
+
+.thermal {
+    width: 80mm;
+    padding: 8px;
+    text-align: center;
+    font-family: monospace;
+    font-size: 10px;
+}
+
+.thermal h3 {
+    margin: 0 0 8px 0;
+}
+
+.thermal p {
+    margin: 4px 0;
+}
