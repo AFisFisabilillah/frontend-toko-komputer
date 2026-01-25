@@ -402,8 +402,6 @@ const EditSale = () => {
                                                     <Option value="cash">Cash</Option>
                                                     <Option value="transfer">Bank Transfer</Option>
                                                     <Option value="qris">QRIS</Option>
-                                                    <Option value="debit_card">Debit Card</Option>
-                                                    <Option value="credit_card">Credit Card</Option>
                                                 </Select>
                                             </Form.Item>
                                         </Col>

@@ -167,7 +167,6 @@ const HomePage = () => {
             value: stats.overview.totalProducts,
             icon: <ShoppingOutlined/>,
             color: '#1890ff',
-            change: '+12%',
             trend: 'up',
             path: '/products'
         },
@@ -176,7 +175,6 @@ const HomePage = () => {
             value: stats.overview.totalServices,
             icon: <LaptopOutlined/>,
             color: '#52c41a',
-            change: '+8%',
             trend: 'up',
             path: '/services'
         },
@@ -185,7 +183,6 @@ const HomePage = () => {
             value: stats.overview.totalSales,
             icon: <ShoppingCartOutlined/>,
             color: '#722ed1',
-            change: '+15%',
             trend: 'up',
             path: '/sales'
         },
@@ -194,8 +191,6 @@ const HomePage = () => {
             value: formatCurrency(stats.overview.todayRevenue),
             icon: <DollarOutlined/>,
             color: '#fa8c16',
-            change: '+18%',
-            trend: 'up',
             path: '/sales'
         }
     ] : [];
@@ -207,32 +202,27 @@ const HomePage = () => {
             value: stats?.salesStats?.monthly,
             icon: <BarChartOutlined/>,
             color: '#1890ff',
-            change: '+22%',
-            trend: 'up'
+
         },
         {
             title: 'Today Sales',
             value: stats.salesStats.today,
             icon: <AreaChartOutlined/>,
             color: '#52c41a',
-            change: '+5',
-            trend: 'up'
+
         },
         {
             title: 'Avg Sale Value',
             value: formatCurrency(stats.salesStats.averageValue),
             icon: <CreditCardOutlined/>,
             color: '#722ed1',
-            change: '+8%',
-            trend: 'up'
+
         },
         {
             title: 'Monthly Revenue',
             value: formatCurrency(stats.overview.monthlyRevenue),
             icon: <DollarOutlined/>,
             color: '#fa8c16',
-            change: '+25%',
-            trend: 'up'
         }
     ] : [];
 
@@ -1086,17 +1076,6 @@ const HomePage = () => {
                                 <DatabaseOutlined className="text-3xl text-red-500 mb-3"/>
                                 <div className="font-medium">Bulk Import</div>
                                 <Text type="secondary" className="text-sm">Import sales data</Text>
-                            </Card>
-                        </Col>
-                        <Col xs={12} md={4}>
-                            <Card
-                                hoverable
-                                className="text-center"
-                                onClick={() => navigate('/dashboard')}
-                            >
-                                <DownloadOutlined className="text-3xl text-cyan-500 mb-3"/>
-                                <div className="font-medium">Export Reports</div>
-                                <Text type="secondary" className="text-sm">Download analytics</Text>
                             </Card>
                         </Col>
                     </Row>

@@ -79,8 +79,6 @@ const Sales = () => {
         cash: 'Cash',
         transfer: 'Transfer',
         qris: 'QRIS',
-        debit_card: 'Debit Card',
-        credit_card: 'Credit Card'
     };
 
     const fetchSales = async (params = {}) => {

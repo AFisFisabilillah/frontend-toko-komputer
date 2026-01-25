@@ -106,10 +106,6 @@ const menuItems = [
         key: '/profile',
         icon: <UserOutlined />,
         label: <Link to="/profile">My Profile</Link>,
-    },{
-        key: '/profile',
-        icon: <UserOutlined />,
-        label: <Link to="/sales">My Profile</Link>,
     }
 ];
 
