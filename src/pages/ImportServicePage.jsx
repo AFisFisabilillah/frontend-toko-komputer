@@ -314,21 +314,6 @@ const ImportService = () => {
                 </Tag>
             ),
         },
-        {
-            title: 'Actions',
-            key: 'actions',
-            width: 80,
-            render: (_, record) => (
-                <Button
-                    type="link"
-                    size="small"
-                    onClick={() => setSelectedRow(record)}
-                    icon={<EyeOutlined />}
-                >
-                    View
-                </Button>
-            ),
-        },
     ];
 
     const errorColumns = [
