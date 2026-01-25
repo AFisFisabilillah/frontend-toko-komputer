@@ -87,9 +87,9 @@ const menuItems = [
                 label:<Link to="/sales/create">Create Penjualan</Link>,
             },
             {
-                key: "/sales/trashed",
+                key: "/sales/trash",
                 icon:<RedoOutlined/>,
-                label:<Link to="/sales/trashed">Trash Penjualan</Link>,
+                label:<Link to="/sales/trash">Trash Penjualan</Link>,
             },{
                 key: "/sales/import",
                 icon:<ImportOutlined/>,
