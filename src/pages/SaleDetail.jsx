@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
     Card,
     Button,
@@ -15,7 +15,10 @@ import {
     Table,
     Badge,
     Alert,
-    Statistic
+    Statistic,
+    Dropdown,
+    Menu,
+    Popover
 } from 'antd';
 import {
     ArrowLeftOutlined,
@@ -28,11 +31,18 @@ import {
     DollarOutlined,
     UserOutlined,
     CalendarOutlined,
-    ShoppingCartOutlined
+    ShoppingCartOutlined,
+    FilePdfOutlined,
+    FileExcelOutlined,
+    FileImageOutlined,
+    MoreOutlined
 } from '@ant-design/icons';
 import { useNavigate, useParams } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import dayjs from 'dayjs';
+import html2canvas from 'html2canvas';
+import jsPDF from 'jspdf';
+import * as XLSX from 'xlsx';
 
 const { Title, Text } = Typography;
 
@@ -40,8 +50,10 @@ const SaleDetail = () => {
     const [sale, setSale] = useState(null);
     const [loading, setLoading] = useState(true);
     const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+    const [downloading, setDownloading] = useState(false);
     const navigate = useNavigate();
     const { id } = useParams();
+    const invoiceRef = useRef();
 
     const paymentMethodColors = {
         cash: 'green',
@@ -87,8 +99,40 @@ const SaleDetail = () => {
     };
 
     const handlePrint = () => {
-        // Implement print functionality
-        message.info('Print receipt functionality coming soon');
+        const printContent = document.getElementById('invoice-print');
+        const printWindow = window.open('', '_blank');
+        printWindow.document.write(`
+            <html>
+                <head>
+                    <title>Invoice ${sale.invoice_number}</title>
+                    <style>
+                        body { font-family: Arial, sans-serif; margin: 20px; }
+                        .header { text-align: center; margin-bottom: 30px; }
+                        .company-name { font-size: 24px; font-weight: bold; }
+                        .invoice-title { font-size: 20px; margin: 10px 0; }
+                        .info-section { margin: 20px 0; }
+                        .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
+                        .table { width: 100%; border-collapse: collapse; margin: 20px 0; }
+                        .table th, .table td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+                        .table th { background-color: #f4f4f4; }
+                        .total-section { text-align: right; margin-top: 30px; }
+                        .footer { margin-top: 50px; text-align: center; color: #666; }
+                        @media print {
+                            .no-print { display: none; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${printContent.innerHTML}
+                </body>
+            </html>
+        `);
+        printWindow.document.close();
+        printWindow.focus();
+        setTimeout(() => {
+            printWindow.print();
+            printWindow.close();
+        }, 250);
     };
 
     const handleCopyInvoice = () => {
@@ -97,6 +141,156 @@ const SaleDetail = () => {
             message.success('Invoice number copied to clipboard');
         }
     };
+
+    const downloadPDF = async () => {
+        try {
+            setDownloading(true);
+            const element = invoiceRef.current;
+            const canvas = await html2canvas(element, {
+                scale: 2,
+                useCORS: true,
+                backgroundColor: '#ffffff'
+            });
+
+            const imgData = canvas.toDataURL('image/png');
+            const pdf = new jsPDF('p', 'mm', 'a4');
+            const imgWidth = 190;
+            const pageHeight = pdf.internal.pageSize.height;
+            const imgHeight = (canvas.height * imgWidth) / canvas.width;
+            let heightLeft = imgHeight;
+            let position = 10;
+
+            pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+            heightLeft -= pageHeight;
+
+            while (heightLeft >= 0) {
+                position = heightLeft - imgHeight;
+                pdf.addPage();
+                pdf.addImage(imgData, 'PNG', 10, position, imgWidth, imgHeight);
+                heightLeft -= pageHeight;
+            }
+
+            pdf.save(`invoice_${sale.invoice_number}.pdf`);
+            message.success('PDF invoice downloaded');
+        } catch (error) {
+            message.error('Failed to generate PDF');
+            console.error(error);
+        } finally {
+            setDownloading(false);
+        }
+    };
+
+    const downloadExcel = () => {
+        try {
+            const worksheetData = [
+                ['INVOICE DETAILS'],
+                ['Invoice Number:', sale.invoice_number],
+                ['Customer Name:', sale.customer_name || 'Walk-in Customer'],
+                ['Transaction Date:', dayjs(sale.created_at).format('DD MMMM YYYY HH:mm')],
+                ['Payment Method:', paymentMethodLabels[sale.payment_method] || sale.payment_method],
+                [''],
+                ['PRODUCTS'],
+                ['Product Name', 'Product ID', 'Price', 'Quantity', 'Subtotal']
+            ];
+
+            sale.products.forEach(product => {
+                worksheetData.push([
+                    product.name,
+                    product.id,
+                    product.price,
+                    product.qty,
+                    product.price * product.qty
+                ]);
+            });
+
+            worksheetData.push(['']);
+            worksheetData.push(['Total Amount:', '', '', '', sale.total_price]);
+
+            const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+            const workbook = XLSX.utils.book_new();
+            XLSX.utils.book_append_sheet(workbook, worksheet, 'Invoice');
+
+            XLSX.writeFile(workbook, `invoice_${sale.invoice_number}.xlsx`);
+            message.success('Excel invoice downloaded');
+        } catch (error) {
+            message.error('Failed to generate Excel file');
+            console.error(error);
+        }
+    };
+
+    const downloadText = () => {
+        try {
+            let textContent = `INVOICE DETAILS\n`;
+            textContent += `================\n`;
+            textContent += `Invoice Number: ${sale.invoice_number}\n`;
+            textContent += `Customer: ${sale.customer_name || 'Walk-in Customer'}\n`;
+            textContent += `Date: ${dayjs(sale.created_at).format('DD MMMM YYYY HH:mm')}\n`;
+            textContent += `Payment Method: ${paymentMethodLabels[sale.payment_method] || sale.payment_method}\n\n`;
+            textContent += `PRODUCTS\n`;
+            textContent += `================\n`;
+
+            sale.products.forEach((product, index) => {
+                textContent += `${index + 1}. ${product.name}\n`;
+                textContent += `   Price: Rp ${product.price.toLocaleString('id-ID')}\n`;
+                textContent += `   Quantity: ${product.qty}\n`;
+                textContent += `   Subtotal: Rp ${(product.price * product.qty).toLocaleString('id-ID')}\n\n`;
+            });
+
+            textContent += `================\n`;
+            textContent += `TOTAL: Rp ${sale.total_price.toLocaleString('id-ID')}\n`;
+            textContent += `================\n`;
+            textContent += `Generated on: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}\n`;
+
+            const blob = new Blob([textContent], { type: 'text/plain' });
+            const url = window.URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = `invoice_${sale.invoice_number}.txt`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+
+            message.success('Text invoice downloaded');
+        } catch (error) {
+            message.error('Failed to generate text file');
+            console.error(error);
+        }
+    };
+
+    const downloadMenu = (
+        <Menu
+            items={[
+                {
+                    key: 'pdf',
+                    label: 'Download as PDF',
+                    icon: <FilePdfOutlined />,
+                    onClick: downloadPDF
+                },
+                {
+                    key: 'excel',
+                    label: 'Download as Excel',
+                    icon: <FileExcelOutlined />,
+                    onClick: downloadExcel
+                },
+                {
+                    key: 'text',
+                    label: 'Download as Text',
+                    icon: <FileTextOutlined />,
+                    onClick: downloadText
+                },
+                {
+                    type: 'divider'
+                },
+                {
+                    key: 'print',
+                    label: 'Print Invoice',
+                    icon: <PrinterOutlined />,
+                    onClick: handlePrint
+                }
+            ]}
+        />
+    );
 
     const productColumns = [
         {
@@ -131,8 +325,8 @@ const SaleDetail = () => {
             width: 150,
             render: (_, record) => (
                 <span className="font-semibold">
-          Rp {(record.price * record.qty).toLocaleString('id-ID')}
-        </span>
+                    Rp {(record.price * record.qty).toLocaleString('id-ID')}
+                </span>
             ),
         },
     ];
@@ -150,6 +344,76 @@ const SaleDetail = () => {
     return (
         <div className="min-h-screen bg-gray-50 p-6">
             <div className="max-w-6xl mx-auto">
+                {/* Invoice Print Template (hidden for normal view) */}
+                <div id="invoice-print" ref={invoiceRef} className="hidden">
+                    <div className="p-8">
+                        <div className="header">
+                            <div className="company-name">Ahtaufix</div>
+                            <div className="invoice-title">INVOICE</div>
+                            <div>Jl. Srimaya </div>
+                            <div>Phone: (021) 1234-5678 m</div>
+                        </div>
+
+                        <Divider />
+
+                        <div className="info-section">
+                            <div className="info-row">
+                                <div>
+                                    <strong>Invoice Number:</strong> {sale.invoice_number}
+                                </div>
+                                <div>
+                                    <strong>Date:</strong> {dayjs(sale.created_at).format('DD MMMM YYYY')}
+                                </div>
+                            </div>
+                            <div className="info-row">
+                                <div>
+                                    <strong>Customer:</strong> {sale.customer_name || 'Walk-in Customer'}
+                                </div>
+                                <div>
+                                    <strong>Time:</strong> {dayjs(sale.created_at).format('HH:mm')}
+                                </div>
+                            </div>
+                        </div>
+
+                        <table className="table">
+                            <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Product Name</th>
+                                <th>Price</th>
+                                <th>Qty</th>
+                                <th>Subtotal</th>
+                            </tr>
+                            </thead>
+                            <tbody>
+                            {sale.products?.map((product, index) => (
+                                <tr key={product.id}>
+                                    <td>{index + 1}</td>
+                                    <td>{product.name}</td>
+                                    <td>Rp {product.price.toLocaleString('id-ID')}</td>
+                                    <td>{product.qty}</td>
+                                    <td>Rp {(product.price * product.qty).toLocaleString('id-ID')}</td>
+                                </tr>
+                            ))}
+                            </tbody>
+                        </table>
+
+                        <div className="total-section">
+                            <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
+                                TOTAL: Rp {sale.total_price.toLocaleString('id-ID')}
+                            </div>
+                            <div style={{ marginTop: '10px' }}>
+                                Payment Method: {paymentMethodLabels[sale.payment_method] || sale.payment_method}
+                            </div>
+                        </div>
+
+                        <div className="footer">
+                            <div>Thank you for your purchase!</div>
+                            <div>This is a computer-generated invoice, no signature required.</div>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="mb-6">
                     <Space direction="vertical" size="small">
                         <Button
@@ -265,21 +529,17 @@ const SaleDetail = () => {
                                     >
                                         Edit Sale
                                     </Button>
+
+
                                     <Button
                                         icon={<PrinterOutlined />}
                                         size="large"
                                         onClick={handlePrint}
                                         className="w-full"
                                     >
-                                        Print Receipt
+                                        Print Invoice
                                     </Button>
-                                    <Button
-                                        icon={<DownloadOutlined />}
-                                        size="large"
-                                        className="w-full"
-                                    >
-                                        Download Invoice
-                                    </Button>
+
                                     <Button
                                         danger
                                         icon={<DeleteOutlined />}

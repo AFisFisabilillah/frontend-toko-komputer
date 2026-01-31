@@ -14,7 +14,6 @@ export default function LoginPage() {
     const navigate = useNavigate();
 
     async function handleFinish(values) {
-        console.log("values", values);
         dispatch(loginUser({
             username: values.username,
             password: values.password,
@@ -28,7 +27,6 @@ export default function LoginPage() {
         }
 
         if(error){
-            console.log(error)
             notification.error({
                 title:"Login failed",
                 description:error,
@@ -38,7 +36,6 @@ export default function LoginPage() {
     },[isAuthenticated, error])
 
     function handleFinishFailed(errorInfo) {
-        console.log('Failed:', errorInfo);
         message.error('Harap periksa kembali data yang Anda masukkan');
     }
 

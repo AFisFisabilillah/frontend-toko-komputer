@@ -256,12 +256,6 @@ const Sales = () => {
                         onClick: () => navigate(`/sales/${record.id}/edit`)
                     },
                     {
-                        key: 'print',
-                        label: 'Print Receipt',
-                        icon: <PrinterOutlined />,
-                        onClick: () => handlePrintReceipt(record)
-                    },
-                    {
                         key: 'delete',
                         label: 'Delete',
                         icon: <DeleteOutlined />,
@@ -284,13 +278,6 @@ const Sales = () => {
                                 type="text"
                                 icon={<EyeOutlined />}
                                 onClick={() => navigate(`/sales/${record.id}`)}
-                            />
-                        </Tooltip>
-                        <Tooltip title="Print Receipt">
-                            <Button
-                                type="text"
-                                icon={<PrinterOutlined />}
-                                onClick={() => handlePrintReceipt(record)}
                             />
                         </Tooltip>
                     </Space>
