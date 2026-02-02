@@ -350,8 +350,10 @@ const SaleDetail = () => {
                         <div className="header">
                             <div className="company-name">Ahtaufix</div>
                             <div className="invoice-title">INVOICE</div>
-                            <div>Jl. Srimaya </div>
-                            <div>Phone: (021) 1234-5678 m</div>
+                            <div>Jl. Pangkalan 6, RT.02/RW.06, Ciketing Udik, Kec. Bantar Gebang, Kota Bks, Jawa Barat 17153 </div>
+                            <div>Phone 1: 0878-7122-2647</div>
+                            <div>Phone 2: 0857-7316-6574</div>
+
                         </div>
 
                         <Divider />
