@@ -7,6 +7,7 @@ const ServiceTemplate = () => {
     const handleDownloadTemplate = () => {
         const templateData = [
             {
+                type: 'laptop',
                 customer_name: 'John Doe',
                 customer_phone: '081234567890',
                 laptop_brand: 'ASUS',
@@ -27,6 +28,7 @@ const ServiceTemplate = () => {
 
         // Auto-size columns
         const wscols = [
+            { wch: 10 }, // type
             { wch: 20 }, // customer_name
             { wch: 15 }, // customer_phone
             { wch: 15 }, // laptop_brand

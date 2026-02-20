@@ -349,6 +349,18 @@ const CreateService = () => {
                                     <Row gutter={16}>
                                         <Col xs={24} md={12}>
                                             <Form.Item
+                                                label="Type"
+                                                name="type"
+                                                rules={[{ required: true, message: 'Please select type' }]}
+                                            >
+                                                <Select placeholder="Select type" size="large">
+                                                    <Option value="handphone">Handphone</Option>
+                                                    <Option value="laptop">Laptop</Option>
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item
                                                 label="Customer Name"
                                                 name="customer_name"
                                                 rules={[{ required: true, message: 'Please enter customer name' }]}

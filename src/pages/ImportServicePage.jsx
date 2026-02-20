@@ -47,6 +47,7 @@ const ImportService = () => {
     const navigate = useNavigate();
 
     const requiredFields = [
+        'type',
         'customer_name',
         'customer_phone',
         'laptop_brand',
@@ -56,6 +57,7 @@ const ImportService = () => {
     ];
 
     const statusOptions = ['received', 'process', 'done', 'taken', 'cancelled'];
+    const typeOptions = ['handphone', 'laptop'];
 
     const validateData = (data) => {
         const errors = [];
@@ -97,6 +99,14 @@ const ImportService = () => {
                 });
             }
 
+            if (row.type && !typeOptions.includes(row.type.toLowerCase())) {
+                errors.push({
+                    row: index + 2,
+                    field: 'type',
+                    message: `Type must be one of: ${typeOptions.join(', ')}`
+                });
+            }
+
 
         });
 
@@ -127,6 +137,7 @@ const ImportService = () => {
 
                     return {
                         key: index,
+                        type: (row.type || row.Type || '').toLowerCase(),
                         customer_name: row.customer_name || row.customer || row['Customer Name'] || '',
                         customer_phone: row.customer_phone || row.phone || row['Phone Number'] || '',
                         laptop_brand: row.laptop_brand || row.brand || row['Laptop Brand'] || '',
@@ -262,6 +273,17 @@ const ImportService = () => {
             ),
         },
         {
+            title: 'Type',
+            dataIndex: 'type',
+            key: 'type',
+            width: 100,
+            render: (type) => (
+                <Tag color={type === 'laptop' ? 'blue' : 'green'}>
+                    {type ? type.toUpperCase() : '-'}
+                </Tag>
+            ),
+        },
+        {
             title: 'Customer',
             key: 'customer',
             width: 150,
@@ -392,6 +414,7 @@ const ImportService = () => {
                                         <div>
                                             <p className="mb-2">Required columns:</p>
                                             <ul className="list-disc pl-4 space-y-1">
+                                                <li>type (handphone, laptop)</li>
                                                 <li>customer_name</li>
                                                 <li>customer_phone</li>
                                                 <li>laptop_brand</li>
@@ -584,6 +607,11 @@ const ImportService = () => {
                 {selectedRow && (
                     <div className="space-y-4">
                         <Descriptions column={1} size="small">
+                            <Descriptions.Item label="Type">
+                                <Tag color={selectedRow.type === 'laptop' ? 'blue' : 'green'}>
+                                    {selectedRow.type ? selectedRow.type.toUpperCase() : '-'}
+                                </Tag>
+                            </Descriptions.Item>
                             <Descriptions.Item label="Customer Name">
                                 <span className="font-medium">{selectedRow.customer_name}</span>
                             </Descriptions.Item>

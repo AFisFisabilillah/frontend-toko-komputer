@@ -267,7 +267,7 @@ const ServiceDetail = () => {
                                 </Row>
                             </Card>
 
-                            <Card title="Laptop Information" className="shadow-sm print:shadow-none">
+                            <Card title={service.type+" Information"} className="shadow-sm print:shadow-none">
                                 <Row gutter={16}>
                                     <Col xs={24} md={12}>
                                         <div className="space-y-2">
@@ -380,6 +380,11 @@ const ServiceDetail = () => {
                                 <Descriptions column={1} size="small">
                                     <Descriptions.Item label="Service Code">
                                         <Tag color="blue" className="font-mono">{service.service_code}</Tag>
+                                    </Descriptions.Item>
+                                    <Descriptions.Item label="Type">
+                                        <Tag color={service.type === 'laptop' ? 'blue' : 'green'}>
+                                            {service.type ? service.type.toUpperCase() : '-'}
+                                        </Tag>
                                     </Descriptions.Item>
                                     <Descriptions.Item label="Status">
                                         <Badge

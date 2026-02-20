@@ -44,6 +44,7 @@ const Services = () => {
     const [statusFilter, setStatusFilter] = useState('');
     const [minCost, setMinCost] = useState('');
     const [maxCost, setMaxCost] = useState('');
+    const [meta,setMeta] = useState({});
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -90,6 +91,7 @@ const Services = () => {
                 total: response.data.meta.total,
                 pageSize: response.data.meta.per_page
             });
+            setMeta(response.data.meta);
         } catch (error) {
             message.error('Failed to fetch services');
         } finally {
@@ -206,6 +208,17 @@ const Services = () => {
             width: 140,
             render: (code) => (
                 <span className="font-mono font-semibold text-blue-600">{code}</span>
+            ),
+        },
+        {
+            title: 'Type',
+            dataIndex: 'type',
+            key: 'type',
+            width: 100,
+            render: (type) => (
+                <Tag color={type === 'laptop' ? 'blue' : 'green'}>
+                    {type ? type.toUpperCase() : '-'}
+                </Tag>
             ),
         },
         {
@@ -365,22 +378,46 @@ const Services = () => {
 
                 {/* Stats */}
                 <div className="mb-6">
-                    <Row gutter={16}>
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-4">
                         {Object.entries(statusLabels).map(([status, label]) => {
-                            const count = services.filter(s => s.status === status).length;
+                            const count = meta?.count_by_status?.[status] || 0;
                             return (
-                                <Col xs={12} sm={6} key={status}>
-                                    <Card size="small" className="text-center">
-                                        <Statistic
-                                            title={label}
-                                            value={count}
-                                            valueStyle={{ color: statusColors[status] }}
-                                        />
-                                    </Card>
-                                </Col>
+                                <Card size="small" className="text-center" key={status}>
+                                    <Statistic
+                                        title={label}
+                                        value={count}
+                                        valueStyle={{ color: statusColors[status] }}
+                                    />
+                                </Card>
                             );
                         })}
-                    </Row>
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <Card size="small">
+                            <Statistic
+                                title="Handphone Revenue"
+                                value={meta?.type?.handphone?.revenue || 0}
+                                prefix="Rp"
+                                formatter={(value) => Number(value).toLocaleString('id-ID')}
+                                valueStyle={{ color: '#3f8600' }}
+                            />
+                            <div className="text-gray-500 text-xs mt-1">
+                                Total: {meta?.type?.handphone?.total || 0} units
+                            </div>
+                        </Card>
+                        <Card size="small">
+                            <Statistic
+                                title="Laptop Revenue"
+                                value={meta?.type?.laptop?.revenue || 0}
+                                prefix="Rp"
+                                formatter={(value) => Number(value).toLocaleString('id-ID')}
+                                valueStyle={{ color: '#1890ff' }}
+                            />
+                            <div className="text-gray-500 text-xs mt-1">
+                                Total: {meta?.type?.laptop?.total || 0} units
+                            </div>
+                        </Card>
+                    </div>
                 </div>
 
                 {/* Filters */}

@@ -67,6 +67,7 @@ const EditService = () => {
             const service = response.data.data;
 
             form.setFieldsValue({
+                type: service.type,
                 customer_name: service.customer_name,
                 customer_phone: service.customer_phone,
                 laptop_brand: service.laptop_brand,
@@ -400,6 +401,18 @@ const EditService = () => {
                             <div className="space-y-6">
                                 <Card title="Customer Information" className="shadow-sm">
                                     <Row gutter={16}>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item
+                                                label="Type"
+                                                name="type"
+                                                rules={[{ required: true, message: 'Please select type' }]}
+                                            >
+                                                <Select placeholder="Select type" size="large">
+                                                    <Option value="handphone">Handphone</Option>
+                                                    <Option value="laptop">Laptop</Option>
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
                                         <Col xs={24} md={12}>
                                             <Form.Item
                                                 label="Customer Name"
