@@ -42,6 +42,7 @@ const Services = () => {
     const [loading, setLoading] = useState(false);
     const [searchText, setSearchText] = useState('');
     const [statusFilter, setStatusFilter] = useState('');
+    const [typeFilter, setTypeFilter] = useState('');
     const [minCost, setMinCost] = useState('');
     const [maxCost, setMaxCost] = useState('');
     const [meta,setMeta] = useState({});
@@ -79,6 +80,7 @@ const Services = () => {
                 per_page: params.per_page || pagination.pageSize,
                 ...(searchText && { search: searchText }),
                 ...(statusFilter && { status: statusFilter }),
+                ...(typeFilter && { type: typeFilter }),
                 ...(minCost && { min_cost: minCost }),
                 ...(maxCost && { max_cost: maxCost }),
             }).toString();
@@ -110,6 +112,7 @@ const Services = () => {
     const handleReset = () => {
         setSearchText('');
         setStatusFilter('');
+        setTypeFilter('');
         setMinCost('');
         setMaxCost('');
         fetchServices({ page: 1 });
@@ -434,7 +437,7 @@ const Services = () => {
                                 allowClear
                             />
                         </Col>
-                        <Col xs={24} md={6}>
+                        <Col xs={24} md={4}>
                             <Select
                                 placeholder="Filter by Status"
                                 value={statusFilter || undefined}
@@ -446,6 +449,19 @@ const Services = () => {
                                 {Object.entries(statusLabels).map(([value, label]) => (
                                     <Option key={value} value={value}>{label}</Option>
                                 ))}
+                            </Select>
+                        </Col>
+                        <Col xs={24} md={4}>
+                            <Select
+                                placeholder="Filter by Type"
+                                value={typeFilter || undefined}
+                                onChange={setTypeFilter}
+                                style={{ width: '100%' }}
+                                size="large"
+                                allowClear
+                            >
+                                <Option value="laptop">Laptop</Option>
+                                <Option value="handphone">Handphone</Option>
                             </Select>
                         </Col>
                         <Col>

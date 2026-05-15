@@ -14,6 +14,7 @@ import {
     Modal,
     Pagination,
     Image,
+    Select,
 } from 'antd';
 const { confirm } = Modal;
 import {
@@ -30,6 +31,7 @@ import axiosInstance from "../adapters/axiosInstance.js";
 import dayjs from "dayjs";
 
 const { Search } = Input;
+const { Option } = Select;
 
 const Products = () => {
     const [products, setProducts] = useState([]);
@@ -37,6 +39,8 @@ const Products = () => {
     const [searchText, setSearchText] = useState('');
     const [minPrice, setMinPrice] = useState('');
     const [maxPrice, setMaxPrice] = useState('');
+    const [sort, setSort] = useState('');
+    const [direction, setDirection] = useState('');
     const [pagination, setPagination] = useState({
         current: 1,
         pageSize: 10,
@@ -49,12 +53,19 @@ const Products = () => {
     const fetchProducts = async (params = {}) => {
         try {
             setLoading(true);
+            const currentSearchText = params.searchText ?? searchText;
+            const currentMinPrice = params.minPrice ?? minPrice;
+            const currentMaxPrice = params.maxPrice ?? maxPrice;
+            const currentSort = params.sort ?? sort;
+            const currentDirection = params.direction ?? direction;
             const queryParams = new URLSearchParams({
                 page: params.page || pagination.current,
                 per_page: params.per_page || pagination.pageSize,
-                ...(searchText && { search: searchText }),
-                ...(minPrice && { min_price: minPrice }),
-                ...(maxPrice && { max_price: maxPrice }),
+                ...(currentSearchText && { search: currentSearchText }),
+                ...(currentMinPrice && { min_price: currentMinPrice }),
+                ...(currentMaxPrice && { max_price: currentMaxPrice }),
+                ...(currentSort && { sort: currentSort }),
+                ...(currentDirection && { direction: currentDirection }),
             }).toString();
 
             const response = await axiosInstance.get(`/products?${queryParams}`);
@@ -65,7 +76,7 @@ const Products = () => {
                 total: response.data.meta.total,
                 pageSize: response.data.meta.per_page
             });
-        } catch (error) {
+        } catch {
             message.error('Failed to fetch products');
         } finally {
             setLoading(false);
@@ -84,7 +95,16 @@ const Products = () => {
         setSearchText('');
         setMinPrice('');
         setMaxPrice('');
-        fetchProducts({ page: 1 });
+        setSort('');
+        setDirection('');
+        fetchProducts({
+            page: 1,
+            searchText: '',
+            minPrice: '',
+            maxPrice: '',
+            sort: '',
+            direction: ''
+        });
     };
 
     const handleDelete = async (id) => {
@@ -92,7 +112,7 @@ const Products = () => {
             await axiosInstance.delete(`/products/${id}`);
             message.success('Product deleted successfully');
             fetchProducts();
-        } catch (error) {
+        } catch {
             message.error('Failed to delete product');
         }
     };
@@ -141,7 +161,7 @@ const Products = () => {
             link.remove();
 
             message.success('Export successful');
-        } catch (error) {
+        } catch {
             message.error('Failed to export services');
         } finally {
             setExportLoading(false);
@@ -377,7 +397,32 @@ const Products = () => {
                                         type="number"
                                     />
                                 </Col>
-                                <Col xs={24} md={12} className="flex items-end">
+                                <Col xs={12} md={6}>
+                                    <Select
+                                        placeholder="Sort by"
+                                        value={sort || undefined}
+                                        onChange={setSort}
+                                        allowClear
+                                        className="w-full"
+                                    >
+                                        <Option value="created_at">Created At</Option>
+                                        <Option value="price">Price</Option>
+                                        <Option value="stok">Stock</Option>
+                                    </Select>
+                                </Col>
+                                <Col xs={12} md={6}>
+                                    <Select
+                                        placeholder="Direction"
+                                        value={direction || undefined}
+                                        onChange={setDirection}
+                                        allowClear
+                                        className="w-full"
+                                    >
+                                        <Option value="asc">Ascending</Option>
+                                        <Option value="desc">Descending</Option>
+                                    </Select>
+                                </Col>
+                                <Col xs={24} className="flex items-end">
                                     <Button type="primary" onClick={handleSearch}>
                                         Apply Filters
                                     </Button>
