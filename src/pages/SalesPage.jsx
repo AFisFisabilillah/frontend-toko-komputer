@@ -40,6 +40,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import dayjs from 'dayjs';
 import * as XLSX from 'xlsx';
+import { formatCurrency, formatDiscountLabel, toNumber } from '../utils/saleCalculations';
 
 const { Search } = Input;
 const { RangePicker } = DatePicker;
@@ -105,7 +106,7 @@ const Sales = () => {
                 total: response.data.meta.total,
                 pageSize: response.data.meta.per_page
             });
-        } catch (error) {
+        } catch {
             message.error('Failed to fetch sales');
         } finally {
             setLoading(false);
@@ -137,7 +138,7 @@ const Sales = () => {
             await axiosInstance.delete(`/sales/${id}`);
             message.success('Sale moved to trash');
             fetchSales();
-        } catch (error) {
+        } catch {
             message.error('Failed to delete sale');
         }
     };
@@ -156,7 +157,7 @@ const Sales = () => {
             setSelectedRows([]);
             setDeleteModalVisible(false);
             fetchSales();
-        } catch (error) {
+        } catch {
             message.error('Failed to delete sales');
         }
     };
@@ -177,16 +178,11 @@ const Sales = () => {
             link.remove();
 
             message.success('Export successful');
-        } catch (error) {
+        } catch {
             message.error('Failed to export sales');
         } finally {
             setExportLoading(false);
         }
-    };
-
-    const handlePrintReceipt = (sale) => {
-        // Implement print functionality
-        message.info('Print receipt functionality coming soon');
     };
 
     const columns = [
@@ -207,6 +203,31 @@ const Sales = () => {
             render: (name) => name || <span className="text-gray-400">Walk-in Customer</span>,
         },
         {
+            title: 'Subtotal',
+            dataIndex: 'subtotal_price',
+            key: 'subtotal_price',
+            width: 150,
+            sorter: true,
+            render: (price, record) => formatCurrency(price ?? record.total_price),
+        },
+        {
+            title: 'Discount',
+            key: 'discount_amount',
+            width: 150,
+            render: (_, record) => (
+                toNumber(record.discount_amount) > 0 ? (
+                    <Space direction="vertical" size={0}>
+                        <Tag color="red">{formatCurrency(record.discount_amount)}</Tag>
+                        <Text type="secondary" className="text-xs">
+                            {formatDiscountLabel(record.discount_type, record.discount_value, record.discount_amount)}
+                        </Text>
+                    </Space>
+                ) : (
+                    <Text type="secondary">-</Text>
+                )
+            ),
+        },
+        {
             title: 'Total',
             dataIndex: 'total_price',
             key: 'total_price',
@@ -214,7 +235,7 @@ const Sales = () => {
             sorter: true,
             render: (price) => (
                 <span className="font-semibold">
-          Rp {price.toLocaleString('id-ID')}
+          {formatCurrency(price)}
         </span>
             ),
         },

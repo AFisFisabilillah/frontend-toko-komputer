@@ -32,6 +32,15 @@ import {
 } from '@ant-design/icons';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
+import {
+    calculateProductTotals,
+    calculateSaleTotals,
+    formatCurrency,
+    formatDiscountLabel,
+    normalizeDiscountType,
+    normalizeDiscountValue,
+    toNumber
+} from '../utils/saleCalculations';
 
 const { Title, Text } = Typography;
 const { Option } = Select;
@@ -39,13 +48,14 @@ const { Option } = Select;
 const CreateSale = () => {
     const [form] = Form.useForm();
     const [loading, setLoading] = useState(false);
-    const [products, setProducts] = useState([]);
     const [selectedProducts, setSelectedProducts] = useState([]);
     const [searchModalVisible, setSearchModalVisible] = useState(false);
     const [productSearch, setProductSearch] = useState('');
     const [productLoading, setProductLoading] = useState(false);
     const [allProducts, setAllProducts] = useState([]);
     const navigate = useNavigate();
+    const transactionDiscountType = Form.useWatch('discount_type', form);
+    const transactionDiscountValue = Form.useWatch('discount_value', form);
 
     useEffect(() => {
         fetchProducts();
@@ -61,7 +71,7 @@ const CreateSale = () => {
 
             const response = await axiosInstance.get(`/products?${queryParams}`);
             setAllProducts(response.data.data);
-        } catch (error) {
+        } catch {
             message.error('Failed to fetch products');
         } finally {
             setProductLoading(false);
@@ -95,7 +105,9 @@ const CreateSale = () => {
                 ...selectedProducts,
                 {
                     ...product,
-                    qty: 1
+                    qty: 1,
+                    discount_type: null,
+                    discount_value: null
                 }
             ]);
         }
@@ -125,19 +137,56 @@ const CreateSale = () => {
         ));
     };
 
-    const calculateSubtotal = (price, qty) => {
-        return price * qty;
+    const handleUpdateProductDiscount = (id, field, value) => {
+        setSelectedProducts(selectedProducts.map(product =>
+            product.id === id ? { ...product, [field]: value } : product
+        ));
     };
 
-    const calculateTotal = () => {
-        return selectedProducts.reduce((total, product) => {
-            return total + (product.price * product.qty);
-        }, 0);
+    const saleTotals = calculateSaleTotals(selectedProducts, transactionDiscountType, transactionDiscountValue);
+
+    const validateProductDiscounts = () => {
+        for (const product of selectedProducts) {
+            const subtotalBeforeDiscount = toNumber(product.price) * toNumber(product.qty);
+            const discountValue = toNumber(product.discount_value);
+
+            if (discountValue > 0 && !product.discount_type) {
+                message.error(`Please select discount type for ${product.name}`);
+                return false;
+            }
+
+            if (product.discount_type === 'percent' && discountValue > 100) {
+                message.error(`Percent discount for ${product.name} cannot exceed 100%`);
+                return false;
+            }
+
+            if (product.discount_type === 'nominal' && discountValue > subtotalBeforeDiscount) {
+                message.error(`Discount for ${product.name} cannot exceed item subtotal`);
+                return false;
+            }
+        }
+
+        return true;
     };
 
     const handleSubmit = async (values) => {
         if (selectedProducts.length === 0) {
             message.error('Please add at least one product');
+            return;
+        }
+
+        if (!validateProductDiscounts()) {
+            return;
+        }
+
+        const totals = calculateSaleTotals(selectedProducts, values.discount_type, values.discount_value);
+        if (toNumber(values.discount_value) > 0 && !values.discount_type) {
+            message.error('Please select transaction discount type');
+            return;
+        }
+
+        if (values.discount_type === 'nominal' && toNumber(values.discount_value) > totals.subtotalAfterItemDiscount) {
+            message.error('Transaction discount cannot exceed subtotal');
             return;
         }
 
@@ -147,9 +196,13 @@ const CreateSale = () => {
             const payload = {
                 customer_name: values.customer_name || '',
                 payment_method: values.payment_method,
+                discount_type: normalizeDiscountType(values.discount_type, values.discount_value),
+                discount_value: normalizeDiscountValue(values.discount_value),
                 products: selectedProducts.map(product => ({
                     product_id: product.id,
-                    qty: product.qty
+                    qty: product.qty,
+                    discount_type: normalizeDiscountType(product.discount_type, product.discount_value),
+                    discount_value: normalizeDiscountValue(product.discount_value)
                 }))
             };
 
@@ -205,7 +258,7 @@ const CreateSale = () => {
             dataIndex: 'price',
             key: 'price',
             width: 120,
-            render: (price) => `Rp ${price.toLocaleString('id-ID')}`,
+            render: (price) => formatCurrency(price),
         },
         {
             title: 'Stock',
@@ -249,7 +302,7 @@ const CreateSale = () => {
             dataIndex: 'price',
             key: 'price',
             width: 120,
-            render: (price) => `Rp ${price.toLocaleString('id-ID')}`,
+            render: (price) => formatCurrency(price),
         },
         {
             title: 'Quantity',
@@ -266,13 +319,52 @@ const CreateSale = () => {
             ),
         },
         {
-            title: 'Subtotal',
+            title: 'Discount Type',
+            key: 'discount_type',
+            width: 140,
+            render: (_, record) => (
+                <Select
+                    allowClear
+                    placeholder="Type"
+                    value={record.discount_type || undefined}
+                    onChange={(value) => handleUpdateProductDiscount(record.id, 'discount_type', value || null)}
+                    size="small"
+                    style={{ width: '100%' }}
+                >
+                    <Option value="nominal">Nominal</Option>
+                    <Option value="percent">Percent</Option>
+                </Select>
+            ),
+        },
+        {
+            title: 'Discount Value',
+            key: 'discount_value',
+            width: 140,
+            render: (_, record) => (
+                <InputNumber
+                    min={0}
+                    max={record.discount_type === 'percent' ? 100 : undefined}
+                    value={record.discount_value}
+                    onChange={(value) => handleUpdateProductDiscount(record.id, 'discount_value', value)}
+                    prefix={record.discount_type === 'nominal' ? 'Rp' : undefined}
+                    addonAfter={record.discount_type === 'percent' ? '%' : undefined}
+                    size="small"
+                    style={{ width: '100%' }}
+                />
+            ),
+        },
+        {
+            title: 'Discount Amount',
+            key: 'discount_amount',
+            width: 150,
+            render: (_, record) => formatCurrency(calculateProductTotals(record).discountAmount),
+        },
+        {
+            title: 'Final Subtotal',
             key: 'subtotal',
             width: 150,
             render: (_, record) => (
-                <span className="font-semibold">
-          Rp {calculateSubtotal(record.price, record.qty).toLocaleString('id-ID')}
-        </span>
+                <span className="font-semibold">{formatCurrency(calculateProductTotals(record).subtotal)}</span>
             ),
         },
         {
@@ -313,7 +405,9 @@ const CreateSale = () => {
                     layout="vertical"
                     onFinish={handleSubmit}
                     initialValues={{
-                        payment_method: 'cash'
+                        payment_method: 'cash',
+                        discount_type: null,
+                        discount_value: null
                     }}
                 >
                     <Row gutter={24}>
@@ -353,6 +447,77 @@ const CreateSale = () => {
                                     </Row>
                                 </Card>
 
+                                <Card title="Transaction Discount" className="shadow-sm">
+                                    <Row gutter={16}>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item
+                                                label="Discount Type"
+                                                name="discount_type"
+                                                dependencies={['discount_value']}
+                                                rules={[
+                                                    ({ getFieldValue }) => ({
+                                                        validator(_, value) {
+                                                            if (toNumber(getFieldValue('discount_value')) > 0 && !value) {
+                                                                return Promise.reject(new Error('Please select discount type'));
+                                                            }
+
+                                                            return Promise.resolve();
+                                                        }
+                                                    })
+                                                ]}
+                                            >
+                                                <Select placeholder="No transaction discount" size="large" allowClear>
+                                                    <Option value="nominal">Nominal</Option>
+                                                    <Option value="percent">Percent</Option>
+                                                </Select>
+                                            </Form.Item>
+                                        </Col>
+                                        <Col xs={24} md={12}>
+                                            <Form.Item
+                                                label="Discount Value"
+                                                name="discount_value"
+                                                dependencies={['discount_type']}
+                                                rules={[
+                                                    ({ getFieldValue }) => ({
+                                                        validator(_, value) {
+                                                            const discountValue = toNumber(value);
+                                                            const discountType = getFieldValue('discount_type');
+
+                                                            if (discountValue <= 0) {
+                                                                return Promise.resolve();
+                                                            }
+
+                                                            if (!discountType) {
+                                                                return Promise.reject(new Error('Please select discount type'));
+                                                            }
+
+                                                            if (discountType === 'percent' && discountValue > 100) {
+                                                                return Promise.reject(new Error('Percent discount cannot exceed 100'));
+                                                            }
+
+                                                            if (discountType === 'nominal' && discountValue > saleTotals.subtotalAfterItemDiscount) {
+                                                                return Promise.reject(new Error('Discount cannot exceed subtotal'));
+                                                            }
+
+                                                            return Promise.resolve();
+                                                        }
+                                                    })
+                                                ]}
+                                            >
+                                                <InputNumber
+                                                    min={0}
+                                                    max={transactionDiscountType === 'percent' ? 100 : undefined}
+                                                    prefix={transactionDiscountType === 'nominal' ? 'Rp' : undefined}
+                                                    addonAfter={transactionDiscountType === 'percent' ? '%' : undefined}
+                                                    placeholder="0"
+                                                    size="large"
+                                                    style={{ width: '100%' }}
+                                                />
+                                            </Form.Item>
+                                        </Col>
+                                    </Row>
+                                </Card>
+
                                 <Card title="Products" className="shadow-sm">
                                     <div className="mb-4">
                                         <Button
@@ -375,6 +540,7 @@ const CreateSale = () => {
                                             pagination={false}
                                             size="small"
                                             className="mb-4"
+                                            scroll={{ x: 1100 }}
                                         />
                                     ) : (
                                         <div className="text-center py-12">
@@ -396,21 +562,43 @@ const CreateSale = () => {
                                                 <div>
                                                     <div className="font-medium">{product.name}</div>
                                                     <div className="text-gray-500">
-                                                        {product.qty} × Rp {product.price.toLocaleString('id-ID')}
+                                                        {product.qty} x {formatCurrency(product.price)}
                                                     </div>
+                                                    {calculateProductTotals(product).discountAmount > 0 && (
+                                                        <div className="text-red-500">
+                                                            Item discount: {formatDiscountLabel(product.discount_type, product.discount_value, calculateProductTotals(product).discountAmount)}
+                                                        </div>
+                                                    )}
                                                 </div>
                                                 <div className="font-semibold">
-                                                    Rp {calculateSubtotal(product.price, product.qty).toLocaleString('id-ID')}
+                                                    {formatCurrency(calculateProductTotals(product).subtotal)}
                                                 </div>
                                             </div>
                                         ))}
 
                                         <Divider className="my-2" />
 
+                                        <div className="flex justify-between">
+                                            <span>Subtotal</span>
+                                            <span>{formatCurrency(saleTotals.subtotalBeforeItemDiscount)}</span>
+                                        </div>
+
+                                        {saleTotals.itemDiscount > 0 && (
+                                            <div className="flex justify-between text-red-600">
+                                                <span>Item Discount</span>
+                                                <span>-{formatCurrency(saleTotals.itemDiscount)}</span>
+                                            </div>
+                                        )}
+
+                                        <div className="flex justify-between text-red-600">
+                                            <span>Transaction Discount</span>
+                                            <span>-{formatCurrency(saleTotals.transactionDiscount)}</span>
+                                        </div>
+
                                         <div className="flex justify-between text-lg font-bold">
                                             <span>Total Amount</span>
                                             <span className="text-blue-600">
-                        Rp {calculateTotal().toLocaleString('id-ID')}
+                        {formatCurrency(saleTotals.total)}
                       </span>
                                         </div>
                                     </div>
@@ -431,7 +619,7 @@ const CreateSale = () => {
                                         <Statistic
                                             title="Average Price"
                                             value={selectedProducts.length > 0 ?
-                                                calculateTotal() / selectedProducts.reduce((sum, p) => sum + p.qty, 0) : 0
+                                                saleTotals.total / selectedProducts.reduce((sum, p) => sum + p.qty, 0) : 0
                                             }
                                             prefix="Rp"
                                             formatter={(value) => Math.round(value).toLocaleString('id-ID')}

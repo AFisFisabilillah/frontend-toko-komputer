@@ -301,12 +301,28 @@ const HomePage = () => {
         },
         {
             title: 'Amount',
-            dataIndex: 'amount',
             key: 'amount',
-            render: (amount) => (
+            render: (_, record) => {
+                const amount = record.total_price ?? record.amount ?? 0;
+
+                return (
                 <span className="font-semibold">
           Rp {amount.toLocaleString('id-ID')}
         </span>
+                );
+            },
+        },
+        {
+            title: 'Discount',
+            key: 'discount',
+            render: (_, record) => (
+                record.discount_amount > 0 ? (
+                    <Tag color="red">
+                        {record.discount_type === 'percent' ? `${record.discount_value}%` : formatCurrency(record.discount_amount)}
+                    </Tag>
+                ) : (
+                    <Text type="secondary">-</Text>
+                )
             ),
         },
         {

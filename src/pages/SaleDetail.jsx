@@ -43,6 +43,7 @@ import dayjs from 'dayjs';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import * as XLSX from 'xlsx';
+import { calculateProductTotals, formatCurrency, formatDiscountLabel, toNumber } from '../utils/saleCalculations';
 
 const { Title, Text } = Typography;
 
@@ -80,7 +81,7 @@ const SaleDetail = () => {
             setLoading(true);
             const response = await axiosInstance.get(`/sales/${id}`);
             setSale(response.data.data);
-        } catch (error) {
+        } catch {
             message.error('Failed to fetch sale details');
             navigate('/sales');
         } finally {
@@ -93,7 +94,7 @@ const SaleDetail = () => {
             await axiosInstance.delete(`/sales/${id}`);
             message.success('Sale moved to trash');
             navigate('/sales');
-        } catch (error) {
+        } catch {
             message.error('Failed to delete sale');
         }
     };
@@ -182,6 +183,8 @@ const SaleDetail = () => {
 
     const downloadExcel = () => {
         try {
+            const subtotalPrice = toNumber(sale.subtotal_price) || sale.products.reduce((sum, product) => sum + calculateProductTotals(product).subtotalBeforeDiscount, 0);
+            const itemDiscount = sale.products.reduce((sum, product) => sum + calculateProductTotals(product).discountAmount, 0);
             const worksheetData = [
                 ['INVOICE DETAILS'],
                 ['Invoice Number:', sale.invoice_number],
@@ -190,21 +193,27 @@ const SaleDetail = () => {
                 ['Payment Method:', paymentMethodLabels[sale.payment_method] || sale.payment_method],
                 [''],
                 ['PRODUCTS'],
-                ['Product Name', 'Product ID', 'Price', 'Quantity', 'Subtotal']
+                ['Product Name', 'Product ID', 'Price', 'Quantity', 'Subtotal Before Discount', 'Item Discount', 'Final Subtotal']
             ];
 
             sale.products.forEach(product => {
+                const productTotals = calculateProductTotals(product);
                 worksheetData.push([
                     product.name,
                     product.id,
                     product.price,
                     product.qty,
-                    product.price * product.qty
+                    productTotals.subtotalBeforeDiscount,
+                    productTotals.discountAmount,
+                    productTotals.subtotal
                 ]);
             });
 
             worksheetData.push(['']);
-            worksheetData.push(['Total Amount:', '', '', '', sale.total_price]);
+            worksheetData.push(['Subtotal:', '', '', '', subtotalPrice]);
+            worksheetData.push(['Item Discount:', '', '', '', itemDiscount]);
+            worksheetData.push(['Transaction Discount:', '', '', '', toNumber(sale.discount_amount)]);
+            worksheetData.push(['Total Amount:', '', '', '', toNumber(sale.total_price)]);
 
             const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
             const workbook = XLSX.utils.book_new();
@@ -230,14 +239,19 @@ const SaleDetail = () => {
             textContent += `================\n`;
 
             sale.products.forEach((product, index) => {
+                const productTotals = calculateProductTotals(product);
                 textContent += `${index + 1}. ${product.name}\n`;
-                textContent += `   Price: Rp ${product.price.toLocaleString('id-ID')}\n`;
+                textContent += `   Price: ${formatCurrency(product.price)}\n`;
                 textContent += `   Quantity: ${product.qty}\n`;
-                textContent += `   Subtotal: Rp ${(product.price * product.qty).toLocaleString('id-ID')}\n\n`;
+                textContent += `   Subtotal Before Discount: ${formatCurrency(productTotals.subtotalBeforeDiscount)}\n`;
+                textContent += `   Item Discount: ${formatDiscountLabel(product.discount_type, product.discount_value, productTotals.discountAmount)}\n`;
+                textContent += `   Final Subtotal: ${formatCurrency(productTotals.subtotal)}\n\n`;
             });
 
             textContent += `================\n`;
-            textContent += `TOTAL: Rp ${sale.total_price.toLocaleString('id-ID')}\n`;
+            textContent += `SUBTOTAL: ${formatCurrency(sale.subtotal_price)}\n`;
+            textContent += `TRANSACTION DISCOUNT: ${formatCurrency(sale.discount_amount)}\n`;
+            textContent += `TOTAL: ${formatCurrency(sale.total_price)}\n`;
             textContent += `================\n`;
             textContent += `Generated on: ${dayjs().format('DD MMMM YYYY HH:mm:ss')}\n`;
 
@@ -258,39 +272,35 @@ const SaleDetail = () => {
         }
     };
 
-    const downloadMenu = (
-        <Menu
-            items={[
-                {
-                    key: 'pdf',
-                    label: 'Download as PDF',
-                    icon: <FilePdfOutlined />,
-                    onClick: downloadPDF
-                },
-                {
-                    key: 'excel',
-                    label: 'Download as Excel',
-                    icon: <FileExcelOutlined />,
-                    onClick: downloadExcel
-                },
-                {
-                    key: 'text',
-                    label: 'Download as Text',
-                    icon: <FileTextOutlined />,
-                    onClick: downloadText
-                },
-                {
-                    type: 'divider'
-                },
-                {
-                    key: 'print',
-                    label: 'Print Invoice',
-                    icon: <PrinterOutlined />,
-                    onClick: handlePrint
-                }
-            ]}
-        />
-    );
+    const downloadMenuItems = [
+        {
+            key: 'pdf',
+            label: 'Download as PDF',
+            icon: <FilePdfOutlined />,
+            onClick: downloadPDF
+        },
+        {
+            key: 'excel',
+            label: 'Download as Excel',
+            icon: <FileExcelOutlined />,
+            onClick: downloadExcel
+        },
+        {
+            key: 'text',
+            label: 'Download as Text',
+            icon: <FileTextOutlined />,
+            onClick: downloadText
+        },
+        {
+            type: 'divider'
+        },
+        {
+            key: 'print',
+            label: 'Print Invoice',
+            icon: <PrinterOutlined />,
+            onClick: handlePrint
+        }
+    ];
 
     const productColumns = [
         {
@@ -308,7 +318,7 @@ const SaleDetail = () => {
             dataIndex: 'price',
             key: 'price',
             width: 120,
-            render: (price) => `Rp ${price.toLocaleString('id-ID')}`,
+            render: (price) => formatCurrency(price),
         },
         {
             title: 'Quantity',
@@ -320,13 +330,23 @@ const SaleDetail = () => {
             ),
         },
         {
-            title: 'Subtotal',
+            title: 'Subtotal Before Discount',
+            key: 'subtotal_before_discount',
+            width: 150,
+            render: (_, record) => formatCurrency(calculateProductTotals(record).subtotalBeforeDiscount),
+        },
+        {
+            title: 'Item Discount',
+            key: 'discount_amount',
+            width: 140,
+            render: (_, record) => formatDiscountLabel(record.discount_type, record.discount_value, calculateProductTotals(record).discountAmount),
+        },
+        {
+            title: 'Final Subtotal',
             key: 'subtotal',
             width: 150,
             render: (_, record) => (
-                <span className="font-semibold">
-                    Rp {(record.price * record.qty).toLocaleString('id-ID')}
-                </span>
+                <span className="font-semibold">{formatCurrency(calculateProductTotals(record).subtotal)}</span>
             ),
         },
     ];
@@ -340,6 +360,10 @@ const SaleDetail = () => {
             </div>
         );
     }
+
+    const subtotalPrice = toNumber(sale.subtotal_price) || sale.products?.reduce((sum, product) => sum + calculateProductTotals(product).subtotalBeforeDiscount, 0) || 0;
+    const itemDiscount = sale.products?.reduce((sum, product) => sum + calculateProductTotals(product).discountAmount, 0) || 0;
+    const transactionDiscount = toNumber(sale.discount_amount);
 
     return (
         <div className="min-h-screen bg-gray-50 p-6">
@@ -384,25 +408,36 @@ const SaleDetail = () => {
                                 <th>Product Name</th>
                                 <th>Price</th>
                                 <th>Qty</th>
-                                <th>Subtotal</th>
+                                <th>Subtotal Before Discount</th>
+                                <th>Discount</th>
+                                <th>Final Subtotal</th>
                             </tr>
                             </thead>
                             <tbody>
-                            {sale.products?.map((product, index) => (
-                                <tr key={product.id}>
-                                    <td>{index + 1}</td>
-                                    <td>{product.name}</td>
-                                    <td>Rp {product.price.toLocaleString('id-ID')}</td>
-                                    <td>{product.qty}</td>
-                                    <td>Rp {(product.price * product.qty).toLocaleString('id-ID')}</td>
-                                </tr>
-                            ))}
+                            {sale.products?.map((product, index) => {
+                                const productTotals = calculateProductTotals(product);
+
+                                return (
+                                    <tr key={product.id}>
+                                        <td>{index + 1}</td>
+                                        <td>{product.name}</td>
+                                        <td>{formatCurrency(product.price)}</td>
+                                        <td>{product.qty}</td>
+                                        <td>{formatCurrency(productTotals.subtotalBeforeDiscount)}</td>
+                                        <td>{formatDiscountLabel(product.discount_type, product.discount_value, productTotals.discountAmount)}</td>
+                                        <td>{formatCurrency(productTotals.subtotal)}</td>
+                                    </tr>
+                                );
+                            })}
                             </tbody>
                         </table>
 
                         <div className="total-section">
+                            <div>Subtotal: {formatCurrency(subtotalPrice)}</div>
+                            <div>Item Discount: {formatCurrency(itemDiscount)}</div>
+                            <div>Transaction Discount: {formatCurrency(transactionDiscount)}</div>
                             <div style={{ fontSize: '18px', fontWeight: 'bold' }}>
-                                TOTAL: Rp {sale.total_price.toLocaleString('id-ID')}
+                                TOTAL: {formatCurrency(sale.total_price)}
                             </div>
                             <div style={{ marginTop: '10px' }}>
                                 Payment Method: {paymentMethodLabels[sale.payment_method] || sale.payment_method}
@@ -479,12 +514,12 @@ const SaleDetail = () => {
                                     summary={() => (
                                         <Table.Summary>
                                             <Table.Summary.Row>
-                                                <Table.Summary.Cell index={0} colSpan={3}>
+                                                <Table.Summary.Cell index={0} colSpan={5}>
                                                     <Text strong className="text-right">Total Amount:</Text>
                                                 </Table.Summary.Cell>
-                                                <Table.Summary.Cell index={3}>
+                                                <Table.Summary.Cell index={5}>
                                                     <Title level={4} className="!m-0 text-blue-600">
-                                                        Rp {sale.total_price.toLocaleString('id-ID')}
+                                                        {formatCurrency(sale.total_price)}
                                                     </Title>
                                                 </Table.Summary.Cell>
                                             </Table.Summary.Row>
@@ -542,6 +577,17 @@ const SaleDetail = () => {
                                         Print Invoice
                                     </Button>
 
+                                    <Dropdown menu={{ items: downloadMenuItems }} trigger={['click']}>
+                                        <Button
+                                            icon={<DownloadOutlined />}
+                                            size="large"
+                                            loading={downloading}
+                                            className="w-full"
+                                        >
+                                            Download Invoice
+                                        </Button>
+                                    </Dropdown>
+
                                     <Button
                                         danger
                                         icon={<DeleteOutlined />}
@@ -558,17 +604,21 @@ const SaleDetail = () => {
                                 <div className="space-y-3">
                                     <div className="flex justify-between">
                                         <Text>Subtotal</Text>
-                                        <Text>Rp {sale.total_price.toLocaleString('id-ID')}</Text>
+                                        <Text>{formatCurrency(subtotalPrice)}</Text>
                                     </div>
                                     <div className="flex justify-between">
-                                        <Text>Tax (0%)</Text>
-                                        <Text>Rp 0</Text>
+                                        <Text>Item Discount</Text>
+                                        <Text className="text-red-600">-{formatCurrency(itemDiscount)}</Text>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <Text>Transaction Discount</Text>
+                                        <Text className="text-red-600">-{formatCurrency(transactionDiscount)}</Text>
                                     </div>
                                     <Divider className="my-2" />
                                     <div className="flex justify-between text-lg font-bold">
                                         <Text>Total</Text>
                                         <Text className="text-blue-600">
-                                            Rp {sale.total_price.toLocaleString('id-ID')}
+                                            {formatCurrency(sale.total_price)}
                                         </Text>
                                     </div>
                                 </div>

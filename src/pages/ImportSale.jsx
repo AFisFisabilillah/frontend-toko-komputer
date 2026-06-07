@@ -30,6 +30,7 @@ import {
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../adapters/axiosInstance';
 import * as XLSX from 'xlsx';
+import { formatCurrency, formatDiscountLabel, toNumber } from '../utils/saleCalculations';
 
 const { Title, Text } = Typography;
 const { Step } = Steps;
@@ -44,8 +45,9 @@ const ImportSale = () => {
     const [selectedRow, setSelectedRow] = useState(null);
     const navigate = useNavigate();
 
-    const requiredFields = ['customer_name', 'payment_method'];
+    const requiredFields = ['payment_method'];
     const paymentMethods = ['cash', 'transfer', 'qris'];
+    const discountTypes = ['nominal', 'percent'];
 
     const validateData = (data) => {
         const errors = [];
@@ -76,7 +78,29 @@ const ImportSale = () => {
                 });
             }
 
-            // Validate products JSON
+            if (!row.subtotal_price && !row.total_price) {
+                errors.push({
+                    row: index + 2,
+                    field: 'subtotal_price/total_price',
+                    message: 'subtotal_price or total_price is required'
+                });
+            }
+
+            if (row.discount_type && !discountTypes.includes(row.discount_type.toLowerCase())) {
+                errors.push({
+                    row: index + 2,
+                    field: 'discount_type',
+                    message: `Discount type must be empty or one of: ${discountTypes.join(', ')}`
+                });
+            }
+
+            if (row.discount_type === 'percent' && toNumber(row.discount_value) > 100) {
+                errors.push({
+                    row: index + 2,
+                    field: 'discount_value',
+                    message: 'Percent discount cannot exceed 100'
+                });
+            }
         });
 
         return errors;
@@ -94,13 +118,23 @@ const ImportSale = () => {
 
                 const formattedData = jsonData.map((row, index) => {
                     let products = [];
+                    const subtotalPrice = toNumber(row.subtotal_price || row.subtotal || row['Subtotal Price']);
+                    const discountType = (row.discount_type || row['Discount Type'] || '').toString().toLowerCase();
+                    const discountValue = toNumber(row.discount_value || row['Discount Value']);
+                    const discountAmount = toNumber(row.discount_amount || row['Discount Amount']);
+                    const totalPrice = toNumber(row.total_price || row.total || row['Total Price']);
+
                     return {
+                        ...row,
                         key: index,
                         customer_name: row.customer_name || row.customer || row['Customer Name'] || '',
                         payment_method: (row.payment_method || row.payment || row['Payment Method'] || 'cash').toLowerCase(),
-                        products: products,
-                        total_price: row.total_price,
-                        ...row
+                        subtotal_price: subtotalPrice || '',
+                        discount_type: discountType || '',
+                        discount_value: discountValue || '',
+                        discount_amount: discountAmount || '',
+                        total_price: totalPrice || '',
+                        products: products
                     };
                 });
 
@@ -226,12 +260,29 @@ const ImportSale = () => {
             ),
         },
         {
+            title: 'Subtotal',
+            dataIndex: 'subtotal_price',
+            key: 'subtotal_price',
+            width: 120,
+            render: (price) => (
+                <span>{price ? formatCurrency(price) : '-'}</span>
+            ),
+        },
+        {
+            title: 'Discount',
+            key: 'discount',
+            width: 130,
+            render: (_, record) => (
+                <span>{formatDiscountLabel(record.discount_type, record.discount_value, record.discount_amount)}</span>
+            ),
+        },
+        {
             title: 'Total',
             dataIndex: 'total_price',
             key: 'total_price',
             width: 120,
             render: (price) => (
-                <span>Rp {price?.toLocaleString('id-ID')}</span>
+                <span>{price ? formatCurrency(price) : '-'}</span>
             ),
         },
         {
@@ -327,17 +378,16 @@ const ImportSale = () => {
                                         <div>
                                             <p className="mb-2">Required columns:</p>
                                             <ul className="list-disc pl-4 space-y-1">
-                                                <li>products (JSON array of products)</li>
-                                                <li>payment_method (cash, transfer, qris, debit_card, credit_card)</li>
+                                                <li>payment_method (cash, transfer, qris)</li>
+                                                <li>subtotal_price or total_price</li>
                                             </ul>
                                             <p className="mt-2">Optional columns:</p>
                                             <ul className="list-disc pl-4 space-y-1">
                                                 <li>customer_name</li>
+                                                <li>discount_type (nominal or percent)</li>
+                                                <li>discount_value</li>
+                                                <li>discount_amount</li>
                                             </ul>
-                                            <p className="mt-2">Products JSON format:</p>
-                                            <pre className="bg-gray-100 p-2 rounded text-xs mt-2">
-                        [{"{"}"product_id": 1, "qty": 2{"}"}]
-                      </pre>
                                         </div>
                                     }
                                     type="info"
@@ -390,7 +440,7 @@ const ImportSale = () => {
                                 />
                                 <Statistic
                                     title="Total Revenue"
-                                    value={previewData.reduce((sum, row) => sum + (row.total_price || 0), 0)}
+                                    value={previewData.reduce((sum, row) => sum + toNumber(row.total_price || row.subtotal_price), 0)}
                                     prefix="Rp"
                                     valueStyle={{ color: '#1890ff' }}
                                     formatter={(value) => value.toLocaleString('id-ID')}
@@ -521,8 +571,14 @@ const ImportSale = () => {
                             </Descriptions.Item>
                             <Descriptions.Item label="Total Price">
                 <span className="font-semibold">
-                  Rp {selectedRow.total_price.toLocaleString('id-ID')}
+                  {selectedRow.total_price ? formatCurrency(selectedRow.total_price) : '-'}
                 </span>
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Subtotal Price">
+                                {selectedRow.subtotal_price ? formatCurrency(selectedRow.subtotal_price) : '-'}
+                            </Descriptions.Item>
+                            <Descriptions.Item label="Discount">
+                                {formatDiscountLabel(selectedRow.discount_type, selectedRow.discount_value, selectedRow.discount_amount)}
                             </Descriptions.Item>
                         </Descriptions>
 
